@@ -1,0 +1,50 @@
+; This is a very simple glulx assembly program intended to demonstrate a
+; complete, but minimally functional program.
+;
+; Part of glulx-assemble
+; Copyright (C) 2018 Gren Drake
+; Released under the MIT license (see LICENSE.md)
+
+.define ioSysGlk            2
+.define wintypeTextBuffer   3
+.define glkWindowOpen       $23
+.define glkSetWindow        $2F
+
+.stack_size 2048
+.extra_memory 256
+.end_header
+
+mainWindow: .zero 4
+
+.function setup 0
+    setiosys ioSysGlk 0
+
+    copy 0 sp
+    copy wintypeTextBuffer sp
+    copy 0 sp
+    copy 0 sp
+    copy 0 sp
+    glk $23 5 *mainWindow
+
+    copy *mainWindow sp
+    glk glkSetWindow 1 0
+    return 0
+
+
+strVerifyFailed:            .string  "Verify failed.\n"
+strVerifySuccess:           .string  "Verify succeeded!\n"
+strHelloWorld:              .string "Hello World.\n\n"
+
+.function start 0
+    call setup 0 0
+    verify sp
+    jeq sp 0 verify_good
+    streamstr strVerifyFailed
+    jump endverify
+verify_good:
+    streamstr strVerifySuccess
+endverify:
+    streamstr strHelloWorld
+
+    return 0
+

@@ -1,0 +1,7 @@
+# object files and main executable
+*.o
+glulx-assemble
+
+# glulx gamefiles and debugging output
+*.ulx
+out_*.txt
