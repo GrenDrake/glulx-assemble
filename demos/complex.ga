@@ -194,7 +194,6 @@ binDataLoop:
 
 	; print two different floats
 	streamstr strPrintIntegralFloat
-	testl:
 	callfi printFloat 7.0 0
 
 	streamstr strPrintNegativeFloat
