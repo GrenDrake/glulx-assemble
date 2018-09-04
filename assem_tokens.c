@@ -227,10 +227,19 @@ struct token_list* lex_file(const char *filename) {
                 token_buf[buf_pos] = 0;
                 a_token = new_token(tt_integer, token_buf, &start);
                 add_token(tokens, a_token);
-            } else if (isdigit(in)) {
+            } else if (isdigit(in) || in == '-') {
                 struct lexer_state start = state;
                 int found_dot = FALSE, bad_dot = FALSE;
                 buf_pos = 0;
+                if (in == '-') {
+                    token_buf[0] = '-';
+                    buf_pos = 1;
+                    in = next_char(fp, &state);
+                    if (!isdigit(in)) {
+                        lexer_error(&start, "expected numeric value after '-'");
+                        has_errors = 1;
+                    }
+                }
                 while (isdigit(in) || in == '.') {
                     if (in == '.') {
                         if (found_dot) {
