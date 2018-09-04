@@ -9,6 +9,7 @@
 #define MAX_ERROR_LENGTH 1024
 
 
+static void expect_eol(struct token **current);
 static void skip_line(struct token **current);
 static void parse_error(struct token *where, const char *err_msg, ...);
 
@@ -48,6 +49,28 @@ void write_word(FILE *out, uint32_t value) {
 /* ************************************************************************** *
  * GENERAL PARSING AND ERROR FUNCTIONS                                        *
  * ************************************************************************** */
+
+static void expect_eol(struct token **current) {
+    struct token *here = *current;
+
+    if (here == NULL || here->next == NULL) {
+        return;
+    }
+
+    here = here->next;
+    if (here->type != tt_eol) {
+        parse_error(here, "expected EOL (ignoring excess tokens)");
+        while (here && here->type != tt_eol) {
+            here = here->next;
+        }
+    }
+
+    if (here) {
+        *current = here->next;
+    } else {
+        *current = NULL;
+    }
+}
 
 static void skip_line(struct token **current) {
     struct token *here = *current;
@@ -112,7 +135,7 @@ static int data_string(FILE *out, struct token *first,
         ++output->code_position;
     }
 
-    skip_line(&here);
+    expect_eol(&here);
     return 1;
 }
 
@@ -131,7 +154,7 @@ static int data_zeroes(FILE *out, struct token *first, struct output_state *outp
         fputc(0, out);
     }
     output->code_position += here->i;
-    skip_line(&here);
+    expect_eol(&here);
     return 1;
 }
 
