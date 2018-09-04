@@ -12,7 +12,9 @@
 static void skip_line(struct token **current);
 static void parse_error(struct token *where, const char *err_msg, ...);
 
-static int data_string(FILE *out, struct token *first, struct output_state *output);
+static int data_string(FILE *out, struct token *first,
+                        struct output_state *output,
+                        int add_type_byte);
 static int data_zeroes(FILE *out, struct token *first, struct output_state *output);
 static int data_bytes(FILE *out, struct token *first, struct output_state *output, int width);
 static int start_function(struct token *first, struct output_state *output);
@@ -81,7 +83,9 @@ static void parse_error(struct token *where, const char *err_msg, ...) {
  * DIRECTIVE PARSING                                                          *
  * ************************************************************************** */
 
-static int data_string(FILE *out, struct token *first, struct output_state *output) {
+static int data_string(FILE *out, struct token *first,
+                        struct output_state *output,
+                        int add_type_byte) {
     struct token *here = first->next;
 
     if (here->type != tt_string) {
@@ -94,14 +98,20 @@ static int data_string(FILE *out, struct token *first, struct output_state *outp
     dump_string(output->debug_out, here->text, 32);
     fprintf(output->debug_out, "~\n");
 #endif
-    fputc(0xE0, out);
+    if (add_type_byte) {
+        fputc(0xE0, out);
+    }
     int pos = 0;
     while (here->text[pos] != 0) {
         fputc(here->text[pos], out);
         ++pos;
     }
     fputc(0, out);
-    output->code_position += pos + 2;
+    output->code_position += pos + 1;
+    if (add_type_byte) {
+        ++output->code_position;
+    }
+
     skip_line(&here);
     return 1;
 }
@@ -392,8 +402,14 @@ int parse_tokens(struct token_list *list, const char *output_filename) {
 /* ************************************************************************** *
  * DIRECTIVE PROCESSING                                                       *
  * ************************************************************************** */
+        if (strcmp(here->text, ".cstring") == 0) {
+            data_string(out, here, &output, FALSE);
+            skip_line(&here);
+            continue;
+        }
+
         if (strcmp(here->text, ".string") == 0) {
-            data_string(out, here, &output);
+            data_string(out, here, &output, TRUE);
             skip_line(&here);
             continue;
         }
