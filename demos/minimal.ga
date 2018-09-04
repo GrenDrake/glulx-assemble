@@ -1,0 +1,12 @@
+; This is a minimal glulx program. It does nothing, then returns. By including
+; the start function in the header, we can also minimize the resulting file
+; size.
+;
+; Part of glulx-assemble
+; Copyright (C) 2018 Gren Drake
+; Released under the MIT license (see LICENSE.md)
+
+.function start 0
+    return 0
+
+.end_header
