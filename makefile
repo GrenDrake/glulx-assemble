@@ -9,7 +9,7 @@ all: $(TARGET) demos
 $(TARGET): $(OBJS)
 	$(CC) $(OBJS) -o $(TARGET)
 
-demos: minimal.ulx basic.ulx #complex.ulx
+demos: minimal.ulx basic.ulx complex.ulx
 
 minimal.ulx: demos/minimal.ga $(TARGET)
 	cd demos && ../$(TARGET) minimal.ga ../minimal.ulx
