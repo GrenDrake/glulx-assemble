@@ -12,12 +12,14 @@
 static void skip_line(struct token **current);
 static void parse_error(struct token *where, const char *err_msg, ...);
 
-static int start_function(struct token *first, struct output_state *output);
-static void end_function(struct output_state *output);
-
 static int data_string(FILE *out, struct token *first, struct output_state *output);
 static int data_zeroes(FILE *out, struct token *first, struct output_state *output);
 static int data_bytes(FILE *out, struct token *first, struct output_state *output, int width);
+static int start_function(struct token *first, struct output_state *output);
+static void end_function(struct output_state *output);
+
+struct operand* parse_operand(struct token **from, struct output_state *output);
+int operand_size(const struct operand *op);
 
 
 /* ************************************************************************** *
