@@ -44,7 +44,7 @@ void write_word(FILE *out, uint32_t value) {
 
 
 /* ************************************************************************** *
- * OTHER OUTPUT FUNCTIONS                                                     *
+ * GENERAL PARSING AND ERROR FUNCTIONS                                        *
  * ************************************************************************** */
 
 static void skip_line(struct token **current) {
@@ -75,6 +75,11 @@ static void parse_error(struct token *where, const char *err_msg, ...) {
            msg_buf);
     va_end(args);
 }
+
+
+/* ************************************************************************** *
+ * DIRECTIVE PARSING                                                          *
+ * ************************************************************************** */
 
 static int data_string(FILE *out, struct token *first, struct output_state *output) {
     struct token *here = first->next;
