@@ -99,6 +99,9 @@ printArgsDone:
 
 	fmul #1 1000.0 #1
 	ftonumz #1 #1
+    jge #1 0 printFloat_notNegative
+    mul #1 -1 #1
+printFloat_notNegative:
 	streamnum #1
 
 	return 0
@@ -127,7 +130,8 @@ strStdTestFunc:             .string "std testFunc: "
 strByte:                    .string "byte: "
 strSpaceEquals:             .string " ="
 strPrintIntegralFloat:      .string "\n\nPrint a integral float: "
-strPrintNonIntegralFloat:   .string "Print a non-integral float: "
+strPrintNegativeFloat:      .string "\nPrint a negative float: "
+strPrintNonIntegralFloat:   .string "\nPrint a non-integral float: "
 strAQuote:                  .string "\n\nA Quote:\n"
 strKiplingIf:               .string "- Rudyard Kipling, If-\n"
 
@@ -192,7 +196,9 @@ binDataLoop:
 	streamstr strPrintIntegralFloat
 	testl:
 	callfi printFloat 7.0 0
-	streamchar '\n'
+
+	streamstr strPrintNegativeFloat
+	callfi printFloat -5.242 0
 
 	streamstr strPrintNonIntegralFloat
 	callfi printFloat 7.54354 0
