@@ -15,6 +15,10 @@ static int is_identifier(int ch);
 static void lexer_error(struct lexer_state *state, const char *err_text);
 
 
+/* ************************************************************************* *
+ * Token Manipulation                                                        *
+ * ************************************************************************* */
+
 struct token* new_token(enum token_type type, const char *text, struct lexer_state *state) {
     struct token *current = malloc(sizeof(struct token));
     if (!current) return NULL;
@@ -78,6 +82,20 @@ struct token* new_rawint_token(int value, struct lexer_state *state) {
     return current;
 }
 
+const char *token_name(struct token *t) {
+    switch(t->type) {
+        case tt_bad:            return "bad token";
+        case tt_colon:          return "colon";
+        case tt_eol:            return "EOL";
+        case tt_identifier:     return "identifier";
+        case tt_float:          return "float (internal)";
+        case tt_indirect:       return "indirect";
+        case tt_integer:        return "integer";
+        case tt_local:          return "local";
+        case tt_string:         return "string";
+        default:                return "bad token type";
+    }
+}
 
 /* ************************************************************************* *
  * Token List Manipulation                                                   *
@@ -124,23 +142,11 @@ void dump_token_list(struct token_list *list) {
     struct token *current = list->first;
 
     while (current) {
-        printf("%s:%d:%d  :  ",
+        printf("%s:%d:%d  :  %s ",
                current->source_file,
                current->line,
-               current->column);
-        switch(current->type) {
-            case tt_bad:            printf("bad token "); break;
-            case tt_colon:          printf("colon "); break;
-            case tt_eol:            printf("EOL "); break;
-            case tt_identifier:     printf("identifier "); break;
-            case tt_float:          printf("float (internal) "); break;
-            case tt_indirect:       printf("indirect "); break;
-            case tt_integer:        printf("integer "); break;
-            case tt_local:          printf("local "); break;
-            case tt_string:         printf("string "); break;
-            default:
-                printf("unknown tye %d", current->type);
-        }
+               current->column,
+               token_name(current));
         if (current->text == NULL) {
             printf("(null)");
         } else {

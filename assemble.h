@@ -117,6 +117,7 @@ char *str_dup(const char *source);
 int cleanup_string(char *text);
 void dump_string(FILE *dest, const char *text, unsigned max_length);
 
+const char *token_name(struct token *t);
 struct token_list* init_token_list(void);
 void add_token(struct token_list *list, struct token *new_token);
 void free_token_list(struct token_list *list);
