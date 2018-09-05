@@ -211,7 +211,9 @@ struct token_list* lex_file(const char *filename) {
     state.text[state.text_length] = 0;
     fclose(source_file);
 
-    return lex_core(&state);
+    struct token_list *result = lex_core(&state);
+    free(state.text);
+    return result;
 }
 
 struct token_list* lex_core(struct lexer_state *state) {
