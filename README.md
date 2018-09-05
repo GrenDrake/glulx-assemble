@@ -90,7 +90,7 @@ Two directives are required in any valid glulx-assemble program: ```.function```
 .extra_memory 512
 ```
 
-**.function**: Adds a function header to the output file. The directive may be immediately followed by ```stk``` to specify that the arguments to this function should be passed on the stack rather than copied into the local variables (see the [glulx spec](https://www.eblong.com/zarf/glulx/glulx-spec_1.html#s.6.2) for details). This is followed by the local variable specification. Locals may be specified by either a positive integer (which will create that many unnamed local variables to be accessed by index) or with a list of local variable names. These styles may not be combined.
+**.function**: Adds a function header to the output file. The directive may be immediately followed by ```stk``` to specify that the arguments to this function should be passed on the stack rather than copied into the local variables (see the [glulx spec](https://www.eblong.com/zarf/glulx/glulx-spec_1.html#s.6.2) for details). This is followed by the local variable specification. Locals may be specified by either a positive integer (which will create that many unnamed local variables to be accessed by index) or with a list of local variable names. These styles may not be combined, but if a function has no local variables the specification may be omitted entirely.
 
 Every glulx program must create at least one function identified by the label ```start```. This will be the entry point of the program. Other functions should generally be identified by appropriate labels as well, though it is not technically required.
 

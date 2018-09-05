@@ -17,7 +17,7 @@
 mainWindow: .zero 4
 ; declare a function for setting up the GLK environment; the zero indicates
 ; that this takes no arguments
-setup: .function 0
+setup: .function
     setiosys ioSysGlk 0
 	; open a GLK window; this is distinct from the application window and
     ; contained within it

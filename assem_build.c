@@ -198,26 +198,28 @@ static int start_function(struct token *first, struct output_state *output) {
     }
 
     int name_count = 0;
-    if (here->type == tt_integer) {
-        name_count = here->i;
-    } else {
-        struct local_list *last = NULL;
-        while (here && here->type != tt_eol) {
-            if (here->type != tt_identifier) {
-                parse_error(here, "expected identifier");
-            } else {
-                struct local_list *local = malloc(sizeof(struct local_list));
-                local->name = str_dup(here->text);
-                local->next = NULL;
-                if (last) {
-                    last->next = local;
+    if (here->type != tt_eol) {
+        if (here->type == tt_integer) {
+            name_count = here->i;
+        } else {
+            struct local_list *last = NULL;
+            while (here && here->type != tt_eol) {
+                if (here->type != tt_identifier) {
+                    parse_error(here, "expected identifier");
                 } else {
-                    output->local_names = local;
+                    struct local_list *local = malloc(sizeof(struct local_list));
+                    local->name = str_dup(here->text);
+                    local->next = NULL;
+                    if (last) {
+                        last->next = local;
+                    } else {
+                        output->local_names = local;
+                    }
+                    last = local;
+                    ++name_count;
                 }
-                last = local;
-                ++name_count;
+                here = here->next;
             }
-            here = here->next;
         }
     }
 
