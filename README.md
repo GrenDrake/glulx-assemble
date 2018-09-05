@@ -72,7 +72,9 @@ Two directives are required in any valid glulx-assemble program: ```.function```
 
 #### General
 
-**.define**: Defines a symbol with a specified constant value.
+**.define**: Defines a symbol with a specified constant value. In the current version the value must be a numeric literal, but this will be expanded in future versions.
+
+A few constants are automatically defined. These are *_RAMSTART*, *_EXTSTART*, and *_ENDMEM* which have the same value as header fields of the same name.
 
 ```
 .define MAX_LENGTH 512
