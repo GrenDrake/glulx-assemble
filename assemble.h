@@ -109,8 +109,8 @@ void dump_string(FILE *dest, const char *text, unsigned max_length);
 
 struct token_list* init_token_list(void);
 void add_token(struct token_list *list, struct token *new_token);
-void free_tokens(struct token_list *list);
-void dump_tokens(struct token_list *list);
+void free_token_list(struct token_list *list);
+void dump_token_list(struct token_list *list);
 struct token_list* lex_file(const char *filename);
 
 int add_label(struct label_def **first_lbl, const char *name, int value);

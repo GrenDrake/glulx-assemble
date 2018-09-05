@@ -83,6 +83,11 @@ struct token* new_rawint_token(int value, struct lexer_state *state) {
     return current;
 }
 
+
+/* ************************************************************************* *
+ * Token List Manipulation                                                   *
+ * ************************************************************************* */
+
 struct token_list* init_token_list(void) {
     struct token_list *list = malloc(sizeof(struct token_list));
     list->first = NULL;
@@ -103,7 +108,7 @@ void add_token(struct token_list *list, struct token *new_token) {
     }
 }
 
-void free_tokens(struct token_list *list) {
+void free_token_list(struct token_list *list) {
     if (list == NULL || list->first == NULL) return;
 
     struct token *current = list->first;
@@ -118,7 +123,7 @@ void free_tokens(struct token_list *list) {
     free(list);
 }
 
-void dump_tokens(struct token_list *list) {
+void dump_token_list(struct token_list *list) {
     if (list == NULL || list->first == NULL) return;
 
     struct token *current = list->first;
@@ -337,7 +342,7 @@ struct token_list* lex_file(const char *filename) {
     }
 
     if (has_errors) {
-        free_tokens(tokens);
+        free_token_list(tokens);
         return NULL;
     } else {
         return tokens;

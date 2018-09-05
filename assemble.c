@@ -21,8 +21,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // dump_tokens(tokens);
+    // dump_token_list(tokens);
     parse_tokens(tokens, outfile);
-    free_tokens(tokens);
+    free_token_list(tokens);
     return 0;
 }
