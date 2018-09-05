@@ -16,7 +16,7 @@ static void parse_error(struct token *where, const char *err_msg, ...);
 static int data_string(struct token *first,
                         struct output_state *output,
                         int add_type_byte);
-static int data_zeroes(FILE *out, struct token *first, struct output_state *output);
+static int data_zeroes(struct token *first, struct output_state *output);
 static int data_bytes(FILE *out, struct token *first, struct output_state *output, int width);
 static int start_function(struct token *first, struct output_state *output);
 static void end_function(struct output_state *output);
@@ -139,7 +139,7 @@ static int data_string(struct token *first,
     return 1;
 }
 
-static int data_zeroes(FILE *out, struct token *first, struct output_state *output) {
+static int data_zeroes(struct token *first, struct output_state *output) {
     struct token *here = first->next;
 
     if (here->type != tt_integer) {
@@ -151,7 +151,7 @@ static int data_zeroes(FILE *out, struct token *first, struct output_state *outp
     fprintf(output->debug_out, "0x%08X zeroes (%d)\n", output->code_position, here->i);
 #endif
     for (int i = 0; i < here->i; ++i) {
-        fputc(0, out);
+        fputc(0, output->out);
     }
     output->code_position += here->i;
     expect_eol(&here);
@@ -448,7 +448,7 @@ int parse_tokens(struct token_list *list, const char *output_filename) {
             continue;
         }
         if (strcmp(here->text, ".zero") == 0) {
-            data_zeroes(out, here, &output);
+            data_zeroes(here, &output);
             skip_line(&here);
             continue;
         }
