@@ -17,7 +17,7 @@
 mainWindow: .zero 4
 ; declare a function for setting up the GLK environment; the zero indicates
 ; that this takes no arguments
-.function setup 0
+setup: .function 0
     setiosys ioSysGlk 0
 	; open a GLK window; this is distinct from the application window and
     ; contained within it
@@ -41,7 +41,7 @@ mainWindow: .zero 4
 ;
 ; what this function actually does is take four arguments, print out the value
 ; of each one, then return the result of multiplying them all together
-.function testFunc value_1 value_2 value_3 value_4 result
+testFunc: .function value_1 value_2 value_3 value_4 result
 	; start by copying a one into the fifth local; since this defaults to zero,
 	; multiplying anything into it would result in zero as well
     copy 1 result
@@ -67,7 +67,7 @@ mainWindow: .zero 4
 printArgsOpenBrace: .string " ("
 ; a sample function that can take a variable argument count; this will display
 ; each argument before returning the sum of those arguments.
-.function stk printArgs 3
+printArgs: .function stk 3
     copy sp #0         ; argument count
     copy 0 #1          ; argument sum
 
@@ -91,7 +91,7 @@ printArgsDone:
 
 ; this is a simple function that prints floats to three decimal places; glulx
 ; doesn't seem to have a built in "streamfloat" unfortunately
-.function printFloat 3
+printFloat: .function 3
 	fmod #0 1.0 #1 #2
 	ftonumz #2 #2
 	streamnum #2
@@ -137,7 +137,7 @@ strKiplingIf:               .string "- Rudyard Kipling, If-\n"
 
 ; define the main function; every program must have a main function and this is
 ; where execution begins
-.function start 3
+start: .function 3
 	; call the GLK setup function; this is required for us to have any output
     callf setup 0
 

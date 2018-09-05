@@ -42,7 +42,7 @@ consisting of an identifier followed by a colon (```the_label_name:```). This is
 comment; comments begin with a semicolon (```;```) and continue until
 the end of the line. All of these elements are optional and a source-line may contain all, some, or none of them. An example of a source line containing all three elements is included below:
 
-```    
+```
 start_loop: aloadb a_string #0 #1   ; load next character from string
 ```
 
@@ -90,13 +90,13 @@ Two directives are required in any valid glulx-assemble program: ```.function```
 .extra_memory 512
 ```
 
-**.function**: Adds a function header to the output file. The directive may be immediately followed by ```stk``` to specify that the arguments to this function should be passed on the stack rather than copied into the local variables (see the [glulx spec](https://www.eblong.com/zarf/glulx/glulx-spec_1.html#s.6.2) for details). This is followed by the name of the function (which is added as a label) as well as the local variable specification. Locals may be specified by either a positive integer (which will create that many unnamed local variables to be accessed by index) or with a list of local variable names. These styles may not be combined.
+**.function**: Adds a function header to the output file. The directive may be immediately followed by ```stk``` to specify that the arguments to this function should be passed on the stack rather than copied into the local variables (see the [glulx spec](https://www.eblong.com/zarf/glulx/glulx-spec_1.html#s.6.2) for details). This is followed by the local variable specification. Locals may be specified by either a positive integer (which will create that many unnamed local variables to be accessed by index) or with a list of local variable names. These styles may not be combined.
 
-Every glulx program must create at least one function named ```start```. This will be the entry point of the program
+Every glulx program must create at least one function identified by the label ```start```. This will be the entry point of the program. Other functions should generally be identified by appropriate labels as well, though it is not technically required.
 
 ```
-.function stk start 7
-.function print_float float_number index
+.function stk 7
+.function a_number index
 ```
 
 **.stack_size**: Sets the stack size the glulx interpreter should use to run this program file. This must be a multiple of 256 bytes and is specified in bytes. If not specified, this will default to a value of 2048 bytes.

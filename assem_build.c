@@ -188,20 +188,14 @@ static int start_function(struct token *first, struct output_state *output) {
     int stack_based = FALSE;
     struct token *here = first->next; // skip ".function"
     end_function(output);
+#ifdef DEBUG
+    int start_pos = output->code_position;
+#endif
 
     if (here && here->type == tt_identifier && strcmp(here->text, "stk") == 0) {
         stack_based = TRUE;
         here = here->next;
     }
-
-    if (here->type != tt_identifier) {
-        parse_error(here, "expected identifier");
-        return 0;
-    }
-    int start_pos = output->code_position;
-    const char *name = here->text;
-    add_label(&output->first_label, here->text, output->code_position);
-    here = here->next;
 
     int name_count = 0;
     if (here->type == tt_integer) {
@@ -236,10 +230,9 @@ static int start_function(struct token *first, struct output_state *output) {
 
 #ifdef DEBUG
     fprintf(output->debug_out,
-            "\n0x%08X FUNCTION %s%s   %d LOCALS",
+            "\n0x%08X FUNCTION %s   %d LOCALS",
             start_pos,
-            stack_based ? "(stk) " : "",
-            name,
+            stack_based ? "(stk)" : "",
             name_count);
     if (output->local_names) {
         fputc(':', output->debug_out);

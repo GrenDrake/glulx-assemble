@@ -6,7 +6,7 @@
 ; Copyright (C) 2018 Gren Drake
 ; Released under the MIT license (see LICENSE.md)
 
-.function start 0
+start: .function 0
     return 0
 
 .end_header
