@@ -17,7 +17,7 @@ static int data_string(struct token *first,
                         struct output_state *output,
                         int add_type_byte);
 static int data_zeroes(struct token *first, struct output_state *output);
-static int data_bytes(FILE *out, struct token *first, struct output_state *output, int width);
+static int data_bytes(struct token *first, struct output_state *output, int width);
 static int start_function(struct token *first, struct output_state *output);
 static void end_function(struct output_state *output);
 
@@ -158,7 +158,7 @@ static int data_zeroes(struct token *first, struct output_state *output) {
     return 1;
 }
 
-static int data_bytes(FILE *out, struct token *first, struct output_state *output, int width) {
+static int data_bytes(struct token *first, struct output_state *output, int width) {
     struct token *here = first->next;
 #ifdef DEBUG
     fprintf(output->debug_out, "0x%08X data(%d)", output->code_position, width);
@@ -174,7 +174,7 @@ static int data_bytes(FILE *out, struct token *first, struct output_state *outpu
 #ifdef DEBUG
         fprintf(output->debug_out, " %d", here->i);
 #endif
-        fwrite(&here->i, width, 1, out);
+        fwrite(&here->i, width, 1, output->out);
         output->code_position += width;
         here = here->next;
     }
@@ -433,17 +433,17 @@ int parse_tokens(struct token_list *list, const char *output_filename) {
         }
 
         if (strcmp(here->text, ".byte") == 0) {
-            data_bytes(out, here, &output, 1);
+            data_bytes(here, &output, 1);
             skip_line(&here);
             continue;
         }
         if (strcmp(here->text, ".short") == 0) {
-            data_bytes(out, here, &output, 2);
+            data_bytes(here, &output, 2);
             skip_line(&here);
             continue;
         }
         if (strcmp(here->text, ".word") == 0) {
-            data_bytes(out, here, &output, 4);
+            data_bytes(here, &output, 4);
             skip_line(&here);
             continue;
         }
