@@ -7,16 +7,6 @@
 
 #define TOKEN_BUF_LEN 512
 
-struct lexer_state {
-    const char *file;
-    int line;
-    int column;
-
-    size_t text_pos;
-    size_t text_length;
-    char *text;
-};
-
 static struct token* new_token(enum token_type type, const char *text, struct lexer_state *state);
 struct token* new_rawint_token(int value, struct lexer_state *state);
 
@@ -198,13 +188,6 @@ static int is_identifier(int ch) {
 
 struct token_list* lex_file(const char *filename) {
     struct lexer_state state = { filename, 1, 1 };
-    struct token_list *tokens = NULL;
-    struct token *a_token;
-    int has_errors = 0;
-    char token_buf[TOKEN_BUF_LEN];
-    int buf_pos = 0;
-
-
     FILE *source_file = fopen(filename, "rt");
     if (!source_file) {
         fprintf(stderr, "Could not open source file ~%s~.\n", filename);
@@ -222,55 +205,64 @@ struct token_list* lex_file(const char *filename) {
     state.text[state.text_length] = 0;
     fclose(source_file);
 
+    return lex_core(&state);
+}
+
+struct token_list* lex_core(struct lexer_state *state) {
+    struct token_list *tokens = NULL;
+    struct token *a_token;
+    int has_errors = 0;
+    char token_buf[TOKEN_BUF_LEN];
+    int buf_pos = 0;
 
     tokens = init_token_list();
-    int in = next_char(&state);
+    int in = next_char(state);
     while (in != 0) {
         if (in == '\n') {
-            a_token = new_token(tt_eol, NULL, &state);
+            a_token = new_token(tt_eol, NULL, state);
             add_token(tokens, a_token);
-            in = next_char(&state);
+            in = next_char(state);
         } else if (in == ';') {
             while (in != 0 && in != '\n') {
-                in = next_char(&state);
+                in = next_char(state);
             }
         } else if (isspace(in)) {
             while (isspace(in)) {
-                in = next_char(&state);
+                in = next_char(state);
             }
         } else if (in == '#') {
-            a_token = new_token(tt_local, NULL, &state);
+            a_token = new_token(tt_local, NULL, state);
             add_token(tokens, a_token);
-            in = next_char(&state);
+            in = next_char(state);
         } else if (in == '*') {
-            a_token = new_token(tt_indirect, NULL, &state);
+            a_token = new_token(tt_indirect, NULL, state);
             add_token(tokens, a_token);
-            in = next_char(&state);
+            in = next_char(state);
         } else if (in == ':') {
-            a_token = new_token(tt_colon, NULL, &state);
+            a_token = new_token(tt_colon, NULL, state);
             add_token(tokens, a_token);
-            in = next_char(&state);
+            in = next_char(state);
         } else if (in == '$') {
-            struct lexer_state start = state;
+            struct lexer_state start = *state;
             token_buf[0] = '$';
             buf_pos = 1;
-            in = next_char(&state);
+            in = next_char(state);
             while (isxdigit(in)) {
                 token_buf[buf_pos] = in;
                 ++buf_pos;
-                in = next_char(&state);
+                in = next_char(state);
             }
             token_buf[buf_pos] = 0;
             a_token = new_token(tt_integer, token_buf, &start);
             add_token(tokens, a_token);
         } else if (isdigit(in) || in == '-') {
-            struct lexer_state start = state;
+            struct lexer_state start = *state;
             int found_dot = FALSE, bad_dot = FALSE;
             buf_pos = 0;
             if (in == '-') {
                 token_buf[0] = '-';
                 buf_pos = 1;
-                in = next_char(&state);
+                in = next_char(state);
                 if (!isdigit(in)) {
                     lexer_error(&start, "expected numeric value after '-'");
                     has_errors = 1;
@@ -288,7 +280,7 @@ struct token_list* lex_file(const char *filename) {
                 }
                 token_buf[buf_pos] = in;
                 ++buf_pos;
-                in = next_char(&state);
+                in = next_char(state);
             }
             if (!bad_dot) {
                 token_buf[buf_pos] = 0;
@@ -296,74 +288,74 @@ struct token_list* lex_file(const char *filename) {
                 add_token(tokens, a_token);
             }
         } else if (is_identifier(in)) {
-            struct lexer_state start = state;
+            struct lexer_state start = *state;
             buf_pos = 0;
             while (is_identifier(in)) {
                 token_buf[buf_pos] = in;
                 ++buf_pos;
-                in = next_char(&state);
+                in = next_char(state);
             }
             token_buf[buf_pos] = 0;
             a_token = new_token(tt_identifier, token_buf, &start);
             add_token(tokens, a_token);
         } else if (in == '"') {
-            struct lexer_state start = state;
+            struct lexer_state start = *state;
             int prev = 0;
-            in = next_char(&state);
+            in = next_char(state);
             buf_pos = 0;
             while ((in != '"' || prev == '\\') && in != EOF) {
                 token_buf[buf_pos] = in;
                 ++buf_pos;
                 prev = in;
-                in = next_char(&state);
+                in = next_char(state);
             }
             if (in == EOF) {
                 lexer_error(&start, "unterminated string");
             } else {
                 token_buf[buf_pos] = 0;
                 if (cleanup_string(token_buf)) {
-                    lexer_error(&state, "bad string escape");
+                    lexer_error(&start, "bad string escape");
                     fprintf(stderr, "%s\n", token_buf);
                     has_errors = 1;
                 }
                 a_token = new_token(tt_string, token_buf, &start);
                 add_token(tokens, a_token);
-                in = next_char(&state);
+                in = next_char(state);
             }
         } else if (in == '\'') {
-            struct lexer_state start = state;
+            struct lexer_state start = *state;
             int prev = 0;
-            in = next_char(&state);
+            in = next_char(state);
             buf_pos = 0;
             while ((in != '\'' || prev == '\\') && in != EOF) {
                 token_buf[buf_pos] = in;
                 ++buf_pos;
                 prev = in;
-                in = next_char(&state);
+                in = next_char(state);
             }
             if (in == EOF) {
                 lexer_error(&start, "unterminated string");
             } else if (buf_pos == 0) {
-                lexer_error(&state, "empty character literal");
+                lexer_error(state, "empty character literal");
                 has_errors = 1;
             } else {
                 token_buf[buf_pos] = 0;
                 if (cleanup_string(token_buf)) {
-                    lexer_error(&state, "bad string escape");
+                    lexer_error(&start, "bad string escape");
                     has_errors = 1;
                 }
                 if (strlen(token_buf) > 1) {
-                    lexer_error(&state, "character literal contains too long");
+                    lexer_error(&start, "character literal too long");
                     has_errors = 1;
                 }
                 a_token = new_rawint_token(token_buf[0], &start);
                 add_token(tokens, a_token);
-                in = next_char(&state);
+                in = next_char(state);
             }
         } else {
-            lexer_error(&state, "unexpected character");
+            lexer_error(state, "unexpected character");
             has_errors = 1;
-            in = next_char(&state);
+            in = next_char(state);
         }
     }
 

@@ -49,6 +49,16 @@ struct token {
     struct token *next;
 };
 
+struct lexer_state {
+    const char *file;
+    int line;
+    int column;
+
+    size_t text_pos;
+    size_t text_length;
+    char *text;
+};
+
 struct operand {
     enum operand_type type;
     int value;
@@ -111,7 +121,9 @@ struct token_list* init_token_list(void);
 void add_token(struct token_list *list, struct token *new_token);
 void free_token_list(struct token_list *list);
 void dump_token_list(struct token_list *list);
+
 struct token_list* lex_file(const char *filename);
+struct token_list* lex_core(struct lexer_state *state);
 
 int add_label(struct label_def **first_lbl, const char *name, int value);
 struct label_def* get_label(struct label_def *first, const char *name);
