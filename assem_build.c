@@ -13,7 +13,7 @@ static void expect_eol(struct token **current);
 static void skip_line(struct token **current);
 static void parse_error(struct token *where, const char *err_msg, ...);
 
-static int data_string(FILE *out, struct token *first,
+static int data_string(struct token *first,
                         struct output_state *output,
                         int add_type_byte);
 static int data_zeroes(FILE *out, struct token *first, struct output_state *output);
@@ -106,7 +106,7 @@ static void parse_error(struct token *where, const char *err_msg, ...) {
  * DIRECTIVE PARSING                                                          *
  * ************************************************************************** */
 
-static int data_string(FILE *out, struct token *first,
+static int data_string(struct token *first,
                         struct output_state *output,
                         int add_type_byte) {
     struct token *here = first->next;
@@ -122,14 +122,14 @@ static int data_string(FILE *out, struct token *first,
     fprintf(output->debug_out, "~\n");
 #endif
     if (add_type_byte) {
-        fputc(0xE0, out);
+        fputc(0xE0, output->out);
     }
     int pos = 0;
     while (here->text[pos] != 0) {
-        fputc(here->text[pos], out);
+        fputc(here->text[pos], output->out);
         ++pos;
     }
-    fputc(0, out);
+    fputc(0, output->out);
     output->code_position += pos + 1;
     if (add_type_byte) {
         ++output->code_position;
@@ -421,13 +421,13 @@ int parse_tokens(struct token_list *list, const char *output_filename) {
  * DIRECTIVE PROCESSING                                                       *
  * ************************************************************************** */
         if (strcmp(here->text, ".cstring") == 0) {
-            data_string(out, here, &output, FALSE);
+            data_string(here, &output, FALSE);
             skip_line(&here);
             continue;
         }
 
         if (strcmp(here->text, ".string") == 0) {
-            data_string(out, here, &output, TRUE);
+            data_string(here, &output, TRUE);
             skip_line(&here);
             continue;
         }
