@@ -46,6 +46,7 @@ int cleanup_string(char *text) {
         switch(text[i]) {
             case '"':
             case '\'':
+            case '\\':
                 text[i - 1] = text[i];
                 break;
             case 'n':

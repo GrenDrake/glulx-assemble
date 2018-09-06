@@ -4,10 +4,19 @@ TARGET=glulx-assemble
 CC=gcc
 CFLAGS=-Wall -std=c99 -pedantic -g -DDEBUG
 
-all: $(TARGET) demos
+all: $(TARGET) tests demos
 
 $(TARGET): $(OBJS)
 	$(CC) $(OBJS) -o $(TARGET)
+
+
+tests: test_utility run_tests
+run_tests:
+	./test_utility
+
+test_utility: tests/test.o tests/utility.o utility.o
+	$(CC) tests/test.o tests/utility.o utility.o -o test_utility
+
 
 demos: minimal.ulx basic.ulx complex.ulx
 
@@ -21,6 +30,6 @@ complex.ulx: demos/complex.ga demos/glk.ga $(TARGET)
 	cd demos && ../$(TARGET) complex.ga ../complex.ulx
 
 clean:
-	$(RM) *.o $(TARGET)
+	$(RM) *.o $(TARGET) *.ulx
 
-.PHONY: all demos clean
+.PHONY: all demos clean tests run_tests
