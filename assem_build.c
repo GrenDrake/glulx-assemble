@@ -16,6 +16,8 @@ static void parse_error(struct token *where, const char *err_msg, ...);
 static int data_string(struct token *first,
                         struct output_state *output,
                         int add_type_byte);
+static int data_unicode(struct token *first,
+                        struct output_state *output);
 static int data_zeroes(struct token *first, struct output_state *output);
 static int data_bytes(struct token *first, struct output_state *output, int width);
 static int start_function(struct token *first, struct output_state *output);
@@ -134,6 +136,39 @@ static int data_string(struct token *first,
     if (add_type_byte) {
         ++output->code_position;
     }
+
+    expect_eol(&here);
+    return 1;
+}
+
+static int data_unicode(struct token *first,
+                        struct output_state *output) {
+    struct token *here = first->next;
+
+    if (here->type != tt_string) {
+        parse_error(here, "expected string");
+        return 0;
+    }
+
+#ifdef DEBUG
+    fprintf(output->debug_out, "0x%08X unicode ~", output->code_position);
+    dump_string(output->debug_out, here->text, 32);
+    fprintf(output->debug_out, "~\n");
+#endif
+    fputc(0xE2, output->out);
+    fputc(0, output->out);
+    fputc(0, output->out);
+    fputc(0, output->out);
+
+    int pos = 0, length = 0;
+    int codepoint = utf8_next_char(here->text, &pos);
+    while (codepoint != 0) {
+        write_word(output->out, codepoint);
+        ++length;
+        codepoint = utf8_next_char(here->text, &pos);
+    }
+    write_word(output->out, 0);
+    output->code_position += length * 4 + 8;
 
     expect_eol(&here);
     return 1;
@@ -428,6 +463,12 @@ int parse_tokens(struct token_list *list, const char *output_filename) {
 
         if (strcmp(here->text, ".string") == 0) {
             data_string(here, &output, TRUE);
+            skip_line(&here);
+            continue;
+        }
+
+        if (strcmp(here->text, ".unicode") == 0) {
+            data_unicode(here, &output);
             skip_line(&here);
             continue;
         }

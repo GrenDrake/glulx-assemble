@@ -31,6 +31,7 @@ setup: .function
     return 0
 
 
+strUnicode:                 .unicode "こんにちは世界。\n"
 strVerifyFailed:            .string  "Verify failed.\n"
 strVerifySuccess:           .string  "Verify succeeded!\n"
 strHelloWorld:              .string "Hello World.\n\n"
@@ -44,6 +45,7 @@ start: .function
 verify_good:
     streamstr strVerifySuccess
 endverify:
+    streamstr strUnicode
     streamstr strHelloWorld
 
     return 0

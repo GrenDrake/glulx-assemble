@@ -137,6 +137,12 @@ These directives can be given labels or named constants as well as the various n
 .string "Hello world.\n"
 ```
 
+**.unicode**: Includes an unencoded unicode string at the current position. A glulx unicode string is a series of four-byte codepoints.
+
+```
+.unicode "こんにちは世界。\n"
+```
+
 **.zero**: Include one or more zero bytes in the output file.
 
 ```
