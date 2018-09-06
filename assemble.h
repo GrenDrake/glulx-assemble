@@ -2,6 +2,7 @@
 #define ASSEMBLE_H
 
 #include <stdio.h>
+#include "utility.h"
 
 #define HEADER_SIZE     40
 #define MAX_OPERANDS    12
@@ -112,10 +113,6 @@ struct output_state {
     struct backpatch *patch_list;
 };
 
-
-char *str_dup(const char *source);
-int cleanup_string(char *text);
-void dump_string(FILE *dest, const char *text, unsigned max_length);
 
 const char *token_name(struct token *t);
 struct token_list* init_token_list(void);

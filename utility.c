@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "utility.h"
+
 char *str_dup(const char *source) {
     size_t length = strlen(source);
     char *new_str = malloc(length + 1);
@@ -101,4 +103,62 @@ void dump_string(FILE *dest, const char *text, unsigned max_length) {
     if (was_truncated) {
         fputs("...", dest);
     }
+}
+
+int utf8_next_char(const char *text, int *pos) {
+    unsigned char first_byte, b1, b2, b3, b4;
+    int length = 0;
+    int cp = UTF8_REPLACEMENT_CHAR;
+
+    first_byte = text[*pos];
+    if (first_byte < 0x80)              length = 1;
+    else if ((first_byte >> 5) == 0x06) length = 2;
+    else if ((first_byte >> 4) == 0x0E) length = 3;
+    else if ((first_byte >> 3) == 0x1E) length = 4;
+
+    switch(length) {
+        case 1:
+            cp = text[*pos];
+            break;
+        case 2:
+            b1 = text[*pos];
+            b2 = text[*pos + 1];
+            if (b2 == 0 || (b2 >> 6) != 0x02)   break;
+
+            cp = (b1 << 6) & 0x7FF;
+            cp += b2 & 0x3F;
+            break;
+        case 3:
+            b1 = text[*pos];
+            b2 = text[*pos + 1];
+            if (b2 == 0 || (b2 >> 6) != 0x02)   break;
+            b3 = text[*pos + 2];
+            if (b3 == 0 || (b3 >> 6) != 0x02)   break;
+
+            cp = (b1 << 12) & 0xFFFF;
+            cp += (b2 << 6) & 0xFFF;
+            cp += b3 & 0x3F;
+            break;
+        case 4:
+            b1 = text[*pos];
+            b2 = text[*pos + 1];
+            if (b2 == 0 || (b2 >> 6) != 0x02)   break;
+            b3 = text[*pos + 2];
+            if (b3 == 0 || (b3 >> 6) != 0x02)   break;
+            b4 = text[*pos + 3];
+            if (b4 == 0 || (b4 >> 6) != 0x02)   break;
+
+            cp = (b1 << 18) & 0x1FFFFF;
+            cp += (b2 << 12) & 0x3FFFF;
+            cp += (b3 << 6) & 0xFFF;
+            cp += b4 & 0x3F;
+            break;
+    }
+
+    if (cp != UTF8_REPLACEMENT_CHAR) {
+        *pos = *pos + length;
+    } else {
+        *pos = *pos + 1;
+    }
+    return cp;
 }
