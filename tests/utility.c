@@ -167,7 +167,6 @@ int test_utf8_next_char_malformed() {
     ASSERT_TRUE(pos == 1, "pos pointed at start of next character");
 
     codepoint = utf8_next_char(text, &pos);
-    printf("%x\n", codepoint);
     ASSERT_TRUE(codepoint == UTF8_REPLACEMENT_CHAR, "second character returned invalid");
     ASSERT_TRUE(pos == 2, "pos pointed at start of next character");
 
