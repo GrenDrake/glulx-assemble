@@ -10,12 +10,11 @@ $(TARGET): $(OBJS)
 	$(CC) $(OBJS) -o $(TARGET)
 
 
-tests: test_utility run_tests
-run_tests:
-	./test_utility
+tests: test_utility
 
 test_utility: tests/test.o tests/utility.o utility.o
 	$(CC) tests/test.o tests/utility.o utility.o -o test_utility
+	./test_utility
 
 
 demos: minimal.ulx basic.ulx complex.ulx
