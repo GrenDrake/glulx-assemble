@@ -6,6 +6,7 @@
 
 #define HEADER_SIZE     40
 #define MAX_OPERANDS    12
+#define MAX_ERROR_LENGTH 1024
 
 #ifndef TRUE
 #define TRUE 1

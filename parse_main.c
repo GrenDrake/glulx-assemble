@@ -6,8 +6,6 @@
 
 #include "assemble.h"
 
-#define MAX_ERROR_LENGTH 1024
-
 
 static void expect_eol(struct token **current);
 static void skip_line(struct token **current);
