@@ -16,8 +16,8 @@ static void parse_error(struct token *where, const char *err_msg, ...);
 static int parse_string_data(struct token *first,
                              struct output_state *output,
                              int add_type_byte);
-static int data_unicode(struct token *first,
-                        struct output_state *output);
+static int parse_unicode_data(struct token *first,
+                              struct output_state *output);
 static int data_zeroes(struct token *first, struct output_state *output);
 static int data_bytes(struct token *first, struct output_state *output, int width);
 static int start_function(struct token *first, struct output_state *output);
@@ -141,8 +141,8 @@ static int parse_string_data(struct token *first,
     return 1;
 }
 
-static int data_unicode(struct token *first,
-                        struct output_state *output) {
+static int parse_unicode_data(struct token *first,
+                              struct output_state *output) {
     struct token *here = first->next;
 
     if (here->type != tt_string) {
@@ -468,7 +468,7 @@ int parse_tokens(struct token_list *list, const char *output_filename) {
         }
 
         if (strcmp(here->text, ".unicode") == 0) {
-            data_unicode(here, &output);
+            parse_unicode_data(here, &output);
             skip_line(&here);
             continue;
         }
