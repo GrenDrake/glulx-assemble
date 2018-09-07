@@ -6,18 +6,18 @@
 
 
 
-int test_str_dup();
+const char* test_str_dup();
 
-int test_cleanup_string_escapes_midtext();
-int test_cleanup_string_escapes_initialfinal();
-int test_cleanup_string_escapes_codes();
-int test_cleanup_string_escapes_invalid_code();
-int test_cleanup_string_fix_multiline();
-int test_cleanup_string_fix_multiline_codes();
+const char* test_cleanup_string_escapes_midtext();
+const char* test_cleanup_string_escapes_initialfinal();
+const char* test_cleanup_string_escapes_codes();
+const char* test_cleanup_string_escapes_invalid_code();
+const char* test_cleanup_string_fix_multiline();
+const char* test_cleanup_string_fix_multiline_codes();
 
-int test_utf8_next_char();
-int test_utf8_next_char_stray_continuation();
-int test_utf8_next_char_malformed();
+const char* test_utf8_next_char();
+const char* test_utf8_next_char_stray_continuation();
+const char* test_utf8_next_char_malformed();
 
 
 
@@ -40,7 +40,7 @@ struct test_def test_list[] = {
 };
 
 
-int test_str_dup(void) {
+const char* test_str_dup(void) {
     const char *source = "Hello World!\n";
     char *copy = str_dup(source);
 
@@ -48,11 +48,11 @@ int test_str_dup(void) {
     ASSERT_TRUE(copy != source, "copy is distinct");
     ASSERT_TRUE(strcmp(copy, source) == 0, "copy has same content");
 
-    return TRUE;
+    return NULL;
 }
 
 
-int test_cleanup_string_escapes_midtext() {
+const char* test_cleanup_string_escapes_midtext() {
     char test_text[] = "text\\n\\nword";
     int result = cleanup_string(test_text);
     ASSERT_TRUE(result == 0,
@@ -60,10 +60,10 @@ int test_cleanup_string_escapes_midtext() {
     ASSERT_TRUE(strcmp(test_text, "text\n\nword") == 0,
                 "handled mid-text newlines");
 
-    return TRUE;
+    return NULL;
 }
 
-int test_cleanup_string_escapes_initialfinal() {
+const char* test_cleanup_string_escapes_initialfinal() {
     char test_text[] = "\\ntext word\\n";
     int result = cleanup_string(test_text);
     ASSERT_TRUE(result == 0,
@@ -71,10 +71,10 @@ int test_cleanup_string_escapes_initialfinal() {
     ASSERT_TRUE(strcmp(test_text, "\ntext word\n") == 0,
                 "handled initial and final newlines");
 
-    return TRUE;
+    return NULL;
 }
 
-int test_cleanup_string_escapes_codes() {
+const char* test_cleanup_string_escapes_codes() {
     char test_text[] = "\\\\\\n\\\"\\'";
     int result = cleanup_string(test_text);
     ASSERT_TRUE(result == 0,
@@ -82,19 +82,19 @@ int test_cleanup_string_escapes_codes() {
     ASSERT_TRUE(strcmp(test_text, "\\\n\"\'") == 0,
                 "handled valid escape codes");
 
-    return TRUE;
+    return NULL;
 }
 
-int test_cleanup_string_escapes_invalid_code() {
+const char* test_cleanup_string_escapes_invalid_code() {
     char test_text[] = "\\q";
     int result = cleanup_string(test_text);
     ASSERT_TRUE(result != 0,
                 "correct return value");
 
-    return TRUE;
+    return NULL;
 }
 
-int test_cleanup_string_fix_multiline() {
+const char* test_cleanup_string_fix_multiline() {
     char test_text[] = "Hello there      \n\n     Everyone.";
     int result = cleanup_string(test_text);
     ASSERT_TRUE(result == 0,
@@ -102,10 +102,10 @@ int test_cleanup_string_fix_multiline() {
     ASSERT_TRUE(strcmp(test_text, "Hello there Everyone.") == 0,
                 "correct resulting string");
 
-    return TRUE;
+    return NULL;
 }
 
-int test_cleanup_string_fix_multiline_codes() {
+const char* test_cleanup_string_fix_multiline_codes() {
     char test_text[] = "Hello \\\"there\\\"      \n\n     \\\"Everyone\\\".";
     int result = cleanup_string(test_text);
     ASSERT_TRUE(result == 0,
@@ -113,10 +113,10 @@ int test_cleanup_string_fix_multiline_codes() {
     ASSERT_TRUE(strcmp(test_text, "Hello \"there\" \"Everyone\".") == 0,
                 "correct resulting string");
 
-    return TRUE;
+    return NULL;
 }
 
-int test_utf8_next_char() {
+const char* test_utf8_next_char() {
     const char *text = "\x24\xC2\xA2\xE2\x82\xAC\xF0\x90\x8D\x88";
     int pos = 0;
     int codepoint = 0;
@@ -140,10 +140,10 @@ int test_utf8_next_char() {
     codepoint = utf8_next_char(text, &pos);
     ASSERT_TRUE(codepoint == 0, "correctly found end of string");
 
-    return TRUE;
+    return NULL;
 }
 
-int test_utf8_next_char_stray_continuation() {
+const char* test_utf8_next_char_stray_continuation() {
     const char *text = "\xA2";
     int pos = 0;
     int codepoint = 0;
@@ -155,9 +155,10 @@ int test_utf8_next_char_stray_continuation() {
     codepoint = utf8_next_char(text, &pos);
     ASSERT_TRUE(codepoint == 0, "correctly found end of string");
 
-    return TRUE;}
+    return NULL;
+}
 
-int test_utf8_next_char_malformed() {
+const char* test_utf8_next_char_malformed() {
     const char *text = "\xC2\xE2\x82\xF0\x90\x8D";
     int pos = 0;
     int codepoint = 0;
@@ -189,5 +190,5 @@ int test_utf8_next_char_malformed() {
     codepoint = utf8_next_char(text, &pos);
     ASSERT_TRUE(codepoint == 0, "correctly found end of string");
 
-    return TRUE;
+    return NULL;
 }

@@ -9,12 +9,12 @@
 #endif
 
 #define ASSERT_TRUE( expr, msg ) do { \
-    if (!(expr)) { printf("FAILED: %s\n", msg); return FALSE;} \
+    if (!(expr)) { return msg;} \
     } while (0)
 
 struct test_def {
     const char *test_name;
-    int (*test_func)(void);
+    const char* (*test_func)(void);
 };
 
 extern const char *test_suite_name;

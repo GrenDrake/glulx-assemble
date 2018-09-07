@@ -5,14 +5,14 @@ int main() {
     int errors = 0;
     int test_number = 0;
 
-    printf("\n\x1B[1mRunning tests for %s\x1B[0m\n", test_suite_name);
-
     while(test_list[test_number].test_name) {
-        printf("%s: ", test_list[test_number].test_name);
-        if (!test_list[test_number].test_func()) {
+        const char *msg = test_list[test_number].test_func();
+        if (msg) {
+            printf("%s: %s: \x1B[31mFAILED\x1B[0m %s\n",
+                    test_suite_name,
+                    test_list[test_number].test_name,
+                    msg);
             ++errors;
-        } else {
-            fputs("DONE\n", stdout);
         }
         ++test_number;
     }
