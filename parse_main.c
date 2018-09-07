@@ -7,9 +7,9 @@
 #include "assemble.h"
 
 
-static void expect_eol(struct token **current);
-static void skip_line(struct token **current);
-static void parse_error(struct token *where, const char *err_msg, ...);
+void expect_eol(struct token **current);
+void skip_line(struct token **current);
+void parse_error(struct token *where, const char *err_msg, ...);
 
 static int parse_string_data(struct token *first,
                              struct output_state *output,
@@ -50,7 +50,7 @@ void write_word(FILE *out, uint32_t value) {
  * GENERAL PARSING AND ERROR FUNCTIONS                                        *
  * ************************************************************************** */
 
-static void expect_eol(struct token **current) {
+void expect_eol(struct token **current) {
     struct token *here = *current;
 
     if (here == NULL || here->next == NULL) {
@@ -72,7 +72,7 @@ static void expect_eol(struct token **current) {
     }
 }
 
-static void skip_line(struct token **current) {
+void skip_line(struct token **current) {
     struct token *here = *current;
 
     while (here && here->type != tt_eol) {
@@ -86,7 +86,7 @@ static void skip_line(struct token **current) {
     }
 }
 
-static void parse_error(struct token *where, const char *err_msg, ...) {
+void parse_error(struct token *where, const char *err_msg, ...) {
     char msg_buf[MAX_ERROR_LENGTH];
 
     va_list args;
