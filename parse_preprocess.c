@@ -7,20 +7,6 @@
 #include "assemble.h"
 
 
-void expect_eol(struct token **current);
-void skip_line(struct token **current);
-void parse_error(struct token *where, const char *err_msg, ...);
-int token_check_identifier(struct token *token, const char *text);
-
-
-int token_check_identifier(struct token *token, const char *text) {
-    if (!token || token->type != tt_identifier || strcmp(token->text, text) != 0) {
-        return FALSE;
-    }
-    return TRUE;
-}
-
-
 int parse_preprocess(struct token_list *tokens) {
     int found_errors = FALSE;
     struct token *here = tokens->first;

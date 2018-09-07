@@ -135,6 +135,11 @@ struct label_def* get_label(struct label_def *first, const char *name);
 void dump_labels(FILE *dest, struct label_def *first);
 void free_labels(struct label_def *first);
 
+void expect_eol(struct token **current);
+void skip_line(struct token **current);
+void parse_error(struct token *where, const char *err_msg, ...);
+int token_check_identifier(struct token *token, const char *text);
+
 int parse_preprocess(struct token_list *tokens);
 int parse_tokens(struct token_list *list, const char *output_filename);
 

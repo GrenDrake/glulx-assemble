@@ -1,4 +1,4 @@
-OBJS=assemble.o lexer.o parse_main.o parse_preprocess.o tokens.o labels.o opcodes.o utility.o
+OBJS=assemble.o lexer.o parse_core.o parse_main.o parse_preprocess.o tokens.o labels.o opcodes.o utility.o
 TARGET=glulx-assemble
 
 CC=gcc
