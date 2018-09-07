@@ -576,23 +576,7 @@ int parse_tokens(struct token_list *list, const char *output_filename) {
         }
 
         if (strcmp(here->text, ".include") == 0) {
-            here = here->next;
-            if (here->type != tt_string) {
-                parse_error(here, "expected string");
-                skip_line(&here);
-                continue;
-            }
-
-            struct token_list *new_tokens = lex_file(here->text);
-            if (new_tokens == NULL) {
-                printf("Errors occured.\n");
-                return 1;
-            }
-
-            new_tokens->last->next = here->next;
-            here->next = new_tokens->first;
-            free(new_tokens);
-
+            parse_error(here, "(internal) encountered .include directive after pre-processing");
             skip_line(&here);
             continue;
         }

@@ -135,6 +135,7 @@ struct label_def* get_label(struct label_def *first, const char *name);
 void dump_labels(FILE *dest, struct label_def *first);
 void free_labels(struct label_def *first);
 
+int parse_preprocess(struct token_list *tokens);
 int parse_tokens(struct token_list *list, const char *output_filename);
 
 extern struct mnemonic codes[];

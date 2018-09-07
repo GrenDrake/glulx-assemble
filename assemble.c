@@ -3,7 +3,6 @@
 
 #include "assemble.h"
 
-
 int main(int argc, char *argv[]) {
     const char *infile  = "input.ga";
     const char *outfile = "output.ulx";
@@ -21,7 +20,11 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // dump_token_list(tokens);
+    if (!parse_preprocess(tokens)) {
+        printf("Errors occured during preprocessing.\n");
+        return 1;
+    }
+
     parse_tokens(tokens, outfile);
     free_token_list(tokens);
     return 0;
