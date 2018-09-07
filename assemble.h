@@ -125,7 +125,7 @@ void remove_token(struct token_list *list, struct token *token);
 void free_token(struct token *token);
 void free_token_list(struct token_list *list);
 void merge_token_list(struct token_list *dest, struct token_list *src, struct token *after);
-void dump_token_list(struct token_list *list);
+void dump_token_list(FILE *dest, struct token_list *list);
 
 struct token_list* lex_file(const char *filename);
 struct token_list* lex_core(struct lexer_state *state);

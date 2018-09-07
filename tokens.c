@@ -187,29 +187,28 @@ void merge_token_list(struct token_list *dest, struct token_list *src, struct to
     free_token_list(src);
 }
 
-void dump_token_list(struct token_list *list) {
+void dump_token_list(FILE *dest, struct token_list *list) {
     if (list == NULL || list->first == NULL) return;
 
     struct token *current = list->first;
 
     while (current) {
-        printf("%s:%d:%d  :  %s ",
+        fprintf(dest, "%s:%d:%d  :  %s ",
                current->source_file,
                current->line,
                current->column,
                token_name(current));
         if (current->text == NULL) {
-            printf("(null)");
+            fprintf(dest, "(null)");
         } else {
-            putc('~', stdout);
-            dump_string(stdout, current->text, 2000000000);
-            putc('~', stdout);
+            fputc('~', dest);
+            dump_string(dest, current->text, 2000000000);
+            fputc('~', dest);
         }
         if (current->type == tt_integer) {
-            printf("  i:%d", current->i);
+            fprintf(dest, "  i:%d", current->i);
         }
-        printf("   %p < %p > %p", current->prev, current, current->next);
-        printf("\n");
+        fprintf(dest, "\n");
 
         current = current->next;
     }
