@@ -48,6 +48,7 @@ struct token {
     char *text;
     int i;
 
+    struct token *prev;
     struct token *next;
 };
 

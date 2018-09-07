@@ -104,9 +104,11 @@ void add_token(struct token_list *list, struct token *new_token) {
 
     new_token->next = NULL;
     if (list->first == NULL) {
+        new_token->prev = NULL;
         list->first = new_token;
         list->last = new_token;
     } else {
+        new_token->prev = list->last;
         list->last->next = new_token;
         list->last = new_token;
     }
