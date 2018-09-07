@@ -41,7 +41,7 @@ struct local_list {
 };
 
 struct token {
-    const char *source_file;
+    char *source_file;
     int line, column;
 
     enum token_type type;
@@ -121,7 +121,10 @@ struct token* new_rawint_token(int value, struct lexer_state *state);
 const char *token_name(struct token *t);
 struct token_list* init_token_list(void);
 void add_token(struct token_list *list, struct token *new_token);
+void remove_token(struct token_list *list, struct token *token);
+void free_token(struct token *token);
 void free_token_list(struct token_list *list);
+void merge_token_list(struct token_list *dest, struct token_list *src, struct token *after);
 void dump_token_list(struct token_list *list);
 
 struct token_list* lex_file(const char *filename);

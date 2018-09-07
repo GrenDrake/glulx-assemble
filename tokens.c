@@ -14,7 +14,7 @@ struct token* new_token(enum token_type type, const char *text, struct lexer_sta
     struct token *current = malloc(sizeof(struct token));
     if (!current) return NULL;
 
-    current->source_file = state->file;
+    current->source_file = str_dup(state->file);
     current->line = state->line;
     current->column = state->column;
     current->next = NULL;
@@ -62,7 +62,7 @@ struct token* new_rawint_token(int value, struct lexer_state *state) {
     struct token *current = malloc(sizeof(struct token));
     if (!current) return NULL;
 
-    current->source_file = state->file;
+    current->source_file = str_dup(state->file);
     current->line = state->line;
     current->column = state->column;
     current->next = NULL;
@@ -114,6 +114,28 @@ void add_token(struct token_list *list, struct token *new_token) {
     }
 }
 
+void remove_token(struct token_list *list, struct token *token) {
+    if (list->first == token) {
+        list->first = token->next;
+    }
+    if (list->last == token) {
+        list->last = token->prev;
+    }
+
+    if (token->prev) {
+        token->prev->next = token->next;
+    }
+    if (token->next) {
+        token->next->prev = token->prev;
+    }
+}
+
+void free_token(struct token *token) {
+    free(token->text);
+    free(token->source_file);
+    free(token);
+}
+
 void free_token_list(struct token_list *list) {
     if (list == NULL || list->first == NULL) return;
 
@@ -121,12 +143,48 @@ void free_token_list(struct token_list *list) {
 
     while (current) {
         struct token *next = current->next;
-        free(current->text);
-        free(current);
+        free_token(current);
         current = next;
     }
 
     free(list);
+}
+
+void merge_token_list(struct token_list *dest, struct token_list *src, struct token *after) {
+    // don't try to merge a list with itself
+    if (dest == src) return;
+    // don't try to merge an empty list
+    if (src->first == NULL) {
+        free_token_list(src);
+        return;
+    }
+    // if dest list is empty, just transfer list over
+    if (dest->first == NULL) {
+        dest->first = src->first;
+        dest->last = src->last;
+        src->first = src->last = NULL;
+        free_token_list(src);
+    }
+    // only otherwise do an actual merge
+    if (after == NULL) {
+        src->last->next = dest->first;
+        dest->first->prev = src->last;
+        dest->first = src->first;
+    } else {
+        struct token *old_next = after->next;
+        after->next = src->first;
+        src->first->prev = after;
+
+        if (old_next) {
+            src->last->next = old_next;
+            old_next->prev = src->last;
+        } else {
+            dest->last = src->last;
+        }
+    }
+
+    src->first = src->last = NULL;
+    free_token_list(src);
 }
 
 void dump_token_list(struct token_list *list) {
@@ -150,6 +208,7 @@ void dump_token_list(struct token_list *list) {
         if (current->type == tt_integer) {
             printf("  i:%d", current->i);
         }
+        printf("   %p < %p > %p", current->prev, current, current->next);
         printf("\n");
 
         current = current->next;
