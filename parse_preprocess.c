@@ -73,6 +73,11 @@ int parse_preprocess(struct token_list *tokens) {
                 continue;
             }
             merge_token_list(tokens, new_tokens, before);
+            if (before) {
+                here = before->next;
+            } else {
+                here = tokens->first;
+            }
             continue;
         }
 
