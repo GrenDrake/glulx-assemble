@@ -218,6 +218,7 @@ struct token_list* lex_core(struct lexer_state *state) {
         free_token_list(tokens);
         return NULL;
     } else {
+        add_token(tokens, new_token(tt_eol, NULL, state));
         return tokens;
     }
 }
