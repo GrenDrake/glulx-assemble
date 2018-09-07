@@ -114,6 +114,8 @@ struct output_state {
 };
 
 
+struct token* new_token(enum token_type type, const char *text, struct lexer_state *state);
+struct token* new_rawint_token(int value, struct lexer_state *state);
 const char *token_name(struct token *t);
 struct token_list* init_token_list(void);
 void add_token(struct token_list *list, struct token *new_token);
