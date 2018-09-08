@@ -53,7 +53,7 @@ static char* lexer_read_string(int quote_char, struct lexer_state *state) {
         lexer_error(&start, "unterminated string");
         return NULL;
     } else {
-        char *string_text = malloc(string_size);
+        char *string_text = malloc(string_size + 1);
         if (string_size > 0) {
             strncpy(string_text, string_start_ptr, string_size);
             string_text[string_size] = 0;
