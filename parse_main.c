@@ -188,6 +188,8 @@ static int data_bytes(struct token *first, struct output_state *output, int widt
                     patch->next = output->info->patch_list;
                 }
                 output->info->patch_list = patch;
+                write_variable(output->out, 0, width);
+                output->code_position += width;
             }
         }
     }
