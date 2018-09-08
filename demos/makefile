@@ -1,6 +1,6 @@
 ASSEMBLE=../glulx-assemble
 
-all: minimal.ulx basic.ulx complex.ulx
+all: minimal.ulx basic.ulx complex.ulx model.ulx
 
 minimal.ulx: minimal.ga $(ASSEMBLE)
 	$(ASSEMBLE) minimal.ga minimal.ulx
@@ -10,6 +10,9 @@ basic.ulx: basic.ga $(ASSEMBLE)
 
 complex.ulx: complex.ga glk.ga $(ASSEMBLE)
 	$(ASSEMBLE) complex.ga complex.ulx
+
+model.ulx: model.ga glk.ga $(ASSEMBLE)
+	$(ASSEMBLE) model.ga model.ulx -dump-labels
 
 clean:
 	$(RM) *.ulx out_*.txt
