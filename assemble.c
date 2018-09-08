@@ -10,6 +10,7 @@ int main(int argc, char *argv[]) {
 
     int flag_dump_labels = FALSE;
     int flag_dump_tokens = FALSE;
+    int flag_dump_patches = FALSE;
     int filename_counter = 0;
 
     for (int i = 1; i < argc; ++i) {
@@ -17,6 +18,8 @@ int main(int argc, char *argv[]) {
             flag_dump_tokens = TRUE;
         } else if (strcmp(argv[i], "-dump-labels") == 0) {
             flag_dump_labels = TRUE;
+        } else if (strcmp(argv[i], "-dump-patches") == 0) {
+            flag_dump_patches = TRUE;
         } else {
             if (filename_counter == 0) {
                 infile = argv[i];
@@ -56,6 +59,13 @@ int main(int argc, char *argv[]) {
         fclose(label_file);
     }
 
+    if (flag_dump_patches) {
+        FILE *patch_file = fopen("out_patches.txt", "wt");
+        dump_patches(patch_file, &info);
+        fclose(patch_file);
+    }
+
+    free_patches(info.patch_list);
     free_labels(info.first_label);
     free_token_list(tokens);
     return 0;

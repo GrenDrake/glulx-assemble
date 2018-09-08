@@ -23,6 +23,7 @@ Most of these options are intended for debugging the assembler and will not be g
 | Argument           | Description |
 | ------------------ | ----------- |
 | ```-dump-labels``` | Dumps a list of all labels and named constants defined in the program after all assembly was completed. |
+| ```-dump-patches``` | Dumps a list of all the back-patches used by the assembler in creating the final program file. |
 | ```-dump-tokens``` | Dumps a list of all the tokens in a program after the preprocessing phase has completed. |
 
 ```

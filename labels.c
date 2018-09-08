@@ -4,6 +4,9 @@
 
 #include "assemble.h"
 
+/* ************************************************************************** *
+ * LABEL FUNCTIONS                                                            *
+ * ************************************************************************** */
 
 int add_label(struct label_def **first_lbl, const char *name, int value) {
     struct label_def *cur = *first_lbl;
@@ -54,6 +57,41 @@ void free_labels(struct label_def *first) {
     struct label_def *cur = first;
     while (cur) {
         struct label_def *next = cur->next;
+        free(cur->name);
+        free(cur);
+        cur = next;
+    }
+}
+
+
+/* ************************************************************************** *
+ * BACKPATCH FUNCTIONS                                                        *
+ * ************************************************************************** */
+
+void dump_patches(FILE *dest, struct program_info *info) {
+    struct backpatch *patch = info->patch_list;
+    if (patch == NULL) fprintf(dest, "No backpatches found!\n");
+
+    while (patch) {
+        fprintf(dest, "%-30s  0x%08X = %d (",
+                patch->name, patch->position,
+                patch->value_final);
+
+        struct label_def *label = get_label(info->first_label, patch->name);
+        if (label) {
+            fprintf(dest, "%d)\n", label->pos);
+        } else {
+            fprintf(dest, "-)\n");
+        }
+
+        patch = patch->next;
+    }
+}
+
+void free_patches(struct backpatch *first) {
+    struct backpatch *cur = first;
+    while (cur) {
+        struct backpatch *next = cur->next;
         free(cur->name);
         free(cur);
         cur = next;

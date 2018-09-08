@@ -80,6 +80,7 @@ struct backpatch {
     char *name;
     int position;
     int position_after;
+    int value_final;
     struct backpatch *next;
 };
 
@@ -142,6 +143,8 @@ int add_label(struct label_def **first_lbl, const char *name, int value);
 struct label_def* get_label(struct label_def *first, const char *name);
 void dump_labels(FILE *dest, struct label_def *first);
 void free_labels(struct label_def *first);
+void dump_patches(FILE *dest, struct program_info *info);
+void free_patches(struct backpatch *first);
 
 void expect_eol(struct token **current);
 struct token* remove_line(struct token_list *list, struct token *start);

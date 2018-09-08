@@ -764,27 +764,17 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
  * PROCESS BACKPATCH LIST                                                     *
  * ************************************************************************** */
     struct backpatch *patch = output.info->patch_list;
-#ifdef DEBUG
-    FILE *patch_file = fopen("out_patches.txt", "wt");
-#endif
     while (patch) {
-#ifdef DEBUG
-        fprintf(patch_file,"%s  %x  %x  ", patch->name, patch->position, patch->position_after);
-#endif
-
         struct label_def *label = get_label(output.info->first_label, patch->name);
         if (label) {
-            int pos = label->pos;
+            patch->value_final = label->pos;
 
             if (patch->position_after) {
-                pos = pos - patch->position_after + 2;
+                patch->value_final = patch->value_final - patch->position_after + 2;
             }
 
-#ifdef DEBUG
-            fprintf(patch_file, "=>  %d/%d\n", label->pos, pos);
-#endif
             fseek(out, patch->position, SEEK_SET);
-            write_word(out, pos);
+            write_word(out, patch->value_final);
         } else {
             fprintf(stdout, "%s: unknown identifier ~%s~\n",
                     info->output_file, patch->name);
@@ -792,9 +782,6 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
 
         patch = patch->next;
     }
-#ifdef DEBUG
-    fclose(patch_file);
-#endif
 
 
 /* ************************************************************************** *
