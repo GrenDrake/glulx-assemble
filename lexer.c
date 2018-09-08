@@ -77,6 +77,13 @@ struct token_list* lex_core(struct lexer_state *state) {
             a_token = new_token(tt_eol, NULL, state);
             add_token(tokens, a_token);
             in = next_char(state);
+        } else if (in == '\\') {
+            in = next_char(state);
+            if (in != '\n') {
+                lexer_error(state, "unexpected character; \\ only permitted at end of line");
+            } else {
+                in = next_char(state);
+            }
         } else if (in == ';') {
             while (in != 0 && in != '\n') {
                 in = next_char(state);
