@@ -41,6 +41,33 @@ void write_word(FILE *out, uint32_t value) {
     fputc(  value        & 0xFF, out);
 }
 
+void write_variable(FILE *out, uint32_t value, int width) {
+    switch(width) {
+        case 1:
+            write_byte(out, value);
+            break;
+        case 2:
+            write_short(out, value);
+            break;
+        case 4:
+            write_word(out, value);
+            break;
+    }
+}
+
+int value_fits(uint32_t value, int width) {
+    switch(width) {
+        case 1:
+            return value == (value & 0xFF);
+        case 2:
+            return value == (value & 0xFFFF);
+        case 4:
+            return TRUE;
+        default:
+            return FALSE;
+    }
+}
+
 
 /* ************************************************************************** *
  * DIRECTIVE PARSING                                                          *
@@ -138,17 +165,31 @@ static int data_bytes(struct token *first, struct output_state *output, int widt
 #endif
 
     while (here && here->type != tt_eol) {
-        if (here->type != tt_integer) {
-            parse_error(here, "expected integer, found %s", token_name(here));
-            return FALSE;
-        }
-
+        struct token *op_start = here;
+        struct operand *operand = parse_operand(&here, output);
+        if (operand) {
+            if (operand->known_value) {
 #ifdef DEBUG
-        fprintf(output->debug_out, " %d", here->i);
+                fprintf(output->debug_out, " %d", here->i);
 #endif
-        fwrite(&here->i, width, 1, output->out);
-        output->code_position += width;
-        here = here->next;
+                if (!value_fits(operand->value, width)) {
+                    parse_error(op_start, "(warning) value is larger than storage specification and will be truncated");
+                }
+                write_variable(output->out, operand->value, width);
+                output->code_position += width;
+            } else {
+                struct backpatch *patch = malloc(sizeof(struct backpatch));
+                patch->next = 0;
+                patch->max_width = width;
+                patch->name = str_dup(operand->name);
+                patch->position = output->code_position;
+                patch->position_after = 0;
+                if (output->info->patch_list) {
+                    patch->next = output->info->patch_list;
+                }
+                output->info->patch_list = patch;
+            }
+        }
     }
 #ifdef DEBUG
     fprintf(output->debug_out, "\n");
@@ -715,6 +756,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
             if (!cur_op->known_value) {
                 struct backpatch *patch = malloc(sizeof(struct backpatch));
                 patch->next = 0;
+                patch->max_width = 4;
                 patch->name = str_dup(cur_op->name);
                 patch->position = output.code_position;
                 patch->position_after = after_pos;
@@ -807,7 +849,13 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
             }
 
             fseek(out, patch->position, SEEK_SET);
-            write_word(out, patch->value_final);
+            if (!value_fits(patch->value_final, patch->max_width)) {
+                fprintf(stderr,
+                        "%s: (warning) value of ~%s~ is larger than storage specification and will be truncated\n",
+                        output.info->output_file,
+                        patch->name);
+            }
+            write_variable(out, patch->value_final, patch->max_width);
         } else {
             fprintf(stdout, "%s: unknown identifier ~%s~\n",
                     info->output_file, patch->name);

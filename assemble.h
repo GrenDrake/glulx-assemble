@@ -81,6 +81,7 @@ struct backpatch {
     int position;
     int position_after;
     int value_final;
+    int max_width;
     struct backpatch *next;
 };
 
