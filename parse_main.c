@@ -855,11 +855,5 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
     write_word(out, checksum); // checksum placeholder
 
     fclose(out);
-#ifdef DEBUG
-    FILE *label_file = fopen("out_labels.txt", "wt");
-    dump_labels(label_file, output.info->first_label);
-    fclose(label_file);
-#endif
-    free_labels(output.info->first_label);
     return !has_errors;
 }

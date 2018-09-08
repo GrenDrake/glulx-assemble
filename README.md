@@ -18,9 +18,12 @@ copyright holder desires.
 
 glulx-assemble is a command line program. It can be run without arguments, in which case it will read from *input.ga* and create *output.ulx*. It can also be passed a number of arguments, as seen in the table below, as well as the names of an input and output file (in that order).
 
+Most of these options are intended for debugging the assembler and will not be generally useful.
+
 | Argument           | Description |
 | ------------------ | ----------- |
-| ```-dump-tokens``` | Dumps a list of all the tokens in a program after the preprocessing phase has completed. (This is mostly for debugging the assembler itself and is probably not a feature you'll want to use.) |
+| ```-dump-labels``` | Dumps a list of all labels and named constants defined in the program after all assembly was completed. |
+| ```-dump-tokens``` | Dumps a list of all the tokens in a program after the preprocessing phase has completed. |
 
 ```
 glulx-assemble -dump_tokens basic.ga basic.ulx

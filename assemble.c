@@ -8,12 +8,15 @@ int main(int argc, char *argv[]) {
     const char *infile  = "input.ga";
     const char *outfile = "output.ulx";
 
+    int flag_dump_labels = FALSE;
     int flag_dump_tokens = FALSE;
     int filename_counter = 0;
 
     for (int i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "-dump-tokens") == 0) {
             flag_dump_tokens = TRUE;
+        } else if (strcmp(argv[i], "-dump-labels") == 0) {
+            flag_dump_labels = TRUE;
         } else {
             if (filename_counter == 0) {
                 infile = argv[i];
@@ -46,6 +49,14 @@ int main(int argc, char *argv[]) {
         fclose(tokens_file);
     }
     parse_tokens(tokens, &info);
+
+    if (flag_dump_labels) {
+        FILE *label_file = fopen("out_labels.txt", "wt");
+        dump_labels(label_file, info.first_label);
+        fclose(label_file);
+    }
+
+    free_labels(info.first_label);
     free_token_list(tokens);
     return 0;
 }
