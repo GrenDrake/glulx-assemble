@@ -372,7 +372,7 @@ int operand_size(const struct operand *op) {
         case ot_constant:
             if (op->value == 0)                             return 0;
             if (op->value >= -128   && op->value <= 0x7F)   return 1;
-            if (op->value >= -32768 && op->value <= 0x7F)   return 2;
+            if (op->value >= -32768 && op->value <= 0x7FFF) return 2;
             else                                            return 3;
         case ot_local:
         case ot_indirect:
