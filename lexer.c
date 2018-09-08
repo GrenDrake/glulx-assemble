@@ -5,9 +5,10 @@
 
 #include "assemble.h"
 
-#define TOKEN_BUF_LEN 512
+#define TOKEN_BUF_LEN 2048
 
 static int next_char(struct lexer_state *state);
+static char* lexer_read_string(int quote_char, struct lexer_state *state);
 static int is_identifier(int ch);
 static void lexer_error(struct lexer_state *state, const char *err_text);
 
@@ -29,6 +30,36 @@ static int next_char(struct lexer_state *state) {
         ++state->column;
     }
     return next;
+}
+
+static char* lexer_read_string(int quote_char, struct lexer_state *state) {
+    struct lexer_state start = *state;
+    int prev = 0, in;
+    size_t string_start, string_end, string_size;
+    char *string_start_ptr;
+
+    string_start_ptr = &state->text[state->text_pos];
+    string_start = state->text_pos;
+    in = next_char(state);
+    while (in != 0 && (in != quote_char || prev == '\\')) {
+        if (prev == '\\')   prev = 0;
+        else                prev = in;
+        in = next_char(state);
+    }
+    string_end = state->text_pos;
+    string_size = string_end - string_start - 1;
+
+    if (in == 0) {
+        lexer_error(&start, "unterminated string");
+        return NULL;
+    } else {
+        char *string_text = malloc(string_size);
+        if (string_size > 0) {
+            strncpy(string_text, string_start_ptr, string_size);
+            string_text[string_size] = 0;
+        }
+        return string_text;
+    }
 }
 
 static void lexer_error(struct lexer_state *state, const char *err_text) {
@@ -162,57 +193,43 @@ struct token_list* lex_core(struct lexer_state *state) {
             add_token(tokens, a_token);
         } else if (in == '"') {
             struct lexer_state start = *state;
-            int prev = 0;
+            char *text = lexer_read_string(in, state);
             in = next_char(state);
-            buf_pos = 0;
-            while ((in != '"' || prev == '\\') && in != EOF) {
-                token_buf[buf_pos] = in;
-                ++buf_pos;
-                prev = in;
-                in = next_char(state);
-            }
-            if (in == EOF) {
-                lexer_error(&start, "unterminated string");
+            if (text == NULL) {
+                has_errors = TRUE;
+                return NULL;
             } else {
-                token_buf[buf_pos] = 0;
-                if (cleanup_string(token_buf)) {
+                if (cleanup_string(text)) {
                     lexer_error(&start, "bad string escape");
-                    fprintf(stderr, "%s\n", token_buf);
                     has_errors = 1;
                 }
-                a_token = new_token(tt_string, token_buf, &start);
+                a_token = new_token(tt_string, text, &start);
                 add_token(tokens, a_token);
-                in = next_char(state);
             }
         } else if (in == '\'') {
             struct lexer_state start = *state;
-            int prev = 0;
+            char *text = lexer_read_string(in, state);
             in = next_char(state);
-            buf_pos = 0;
-            while ((in != '\'' || prev == '\\') && in != EOF) {
-                token_buf[buf_pos] = in;
-                ++buf_pos;
-                prev = in;
-                in = next_char(state);
-            }
-            if (in == EOF) {
-                lexer_error(&start, "unterminated string");
-            } else if (buf_pos == 0) {
-                lexer_error(state, "empty character literal");
-                has_errors = 1;
+            if (text == NULL) {
+                has_errors = TRUE;
+                return NULL;
+            } else if (strlen(text) == 0) {
+                lexer_error(&start, "empty character literal");
+                has_errors = TRUE;
             } else {
-                token_buf[buf_pos] = 0;
-                if (cleanup_string(token_buf)) {
+                if (cleanup_string(text)) {
                     lexer_error(&start, "bad string escape");
                     has_errors = 1;
                 }
-                if (strlen(token_buf) > 1) {
+                int text_pos = 0;
+                int cp = utf8_next_char(text, &text_pos);
+                if (text[text_pos] != 0) {
                     lexer_error(&start, "character literal too long");
                     has_errors = 1;
                 }
-                a_token = new_rawint_token(token_buf[0], &start);
+                free(text);
+                a_token = new_rawint_token(cp, &start);
                 add_token(tokens, a_token);
-                in = next_char(state);
             }
         } else {
             lexer_error(state, "unexpected character");
