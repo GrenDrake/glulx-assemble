@@ -53,6 +53,9 @@ int main(int argc, char *argv[]) {
     }
     if (!parse_tokens(tokens, &info)) {
         printf("Errors occured during parse & build.\n");
+        if (remove(info.output_file) != 0) {
+            perror("Could not remove failed build file");
+        }
         return 1;
     }
 
