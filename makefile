@@ -10,8 +10,11 @@ $(TARGET): $(OBJS)
 	$(CC) $(OBJS) -o $(TARGET)
 
 
-tests: test_utility
+tests: test_utility test_parse_core
 
+test_parse_core: tests/test.o tests/parse_core.o parse_core.o tokens.o utility.o
+	$(CC) tests/test.o tests/parse_core.o parse_core.o tokens.o utility.o -o test_parse_core
+	./test_parse_core
 test_utility: tests/test.o tests/utility.o utility.o
 	$(CC) tests/test.o tests/utility.o utility.o -o test_utility
 	./test_utility
