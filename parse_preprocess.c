@@ -19,6 +19,43 @@ int parse_preprocess(struct token_list *tokens, struct program_info *info) {
             continue;
         }
 
+        // define statements
+        if (here->type == tt_identifier && strcmp(here->text, ".define") == 0) {
+            struct token *start = here;
+            here = here->next;
+
+            if (here->type != tt_identifier) {
+                parse_error(here, "expected identifier");
+                skip_line(&here);
+                continue;
+            }
+            const char *name = here->text;
+            here = here->next;
+
+            if (here->type != tt_integer) {
+                parse_error(here, "expected integer, found %s", token_name(here));
+                skip_line(&here);
+                found_errors = TRUE;
+                continue;
+            }
+
+            if (get_label(info->first_label, name) != NULL) {
+                parse_error(here, "name %s already in use", name);
+                skip_line(&here);
+                found_errors = TRUE;
+                continue;
+            }
+
+            if (!add_label(&info->first_label, name, here->i)) {
+                parse_error(here, "error creating constant");
+                skip_line(&here);
+                found_errors = TRUE;
+                continue;
+            }
+            here = remove_line(tokens, start);
+            continue;
+        }
+
         // included files
         if (token_check_identifier(here, ".include")) {
             struct token *before = here->prev;

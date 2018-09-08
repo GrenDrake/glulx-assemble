@@ -29,6 +29,41 @@ void expect_eol(struct token **current) {
     }
 }
 
+/*
+    Removes all tokens from the list beginning at *start* and ending at the
+    next EOL token (or the end of the token list if not EOL token is found).
+    Returns the next token after the removed EOL token, or NULL if there are
+    no more tokens in the list.
+*/
+struct token* remove_line(struct token_list *list, struct token *start) {
+    struct token *next = NULL, *current = start;
+
+    while (current && current->type != tt_eol) {
+        next = current->next;
+        remove_token(list, current);
+        free_token(current);
+        current = next;
+    }
+
+
+    if (current == NULL) {
+        if (list->first == start) {
+            // we've removed all the tokens
+            list->first = list->last = NULL;
+        }
+        return NULL;
+    }
+
+
+    next = current->next;
+    if (list->first == start) {
+        list->first = next;
+    }
+    remove_token(list, current);
+    free_token(current);
+    return next;
+}
+
 void skip_line(struct token **current) {
     struct token *here = *current;
 

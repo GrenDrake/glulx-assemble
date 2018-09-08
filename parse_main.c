@@ -490,33 +490,11 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
             continue;
         }
 
-        if (strcmp(here->text, ".define") == 0) {
-            here = here->next;
-            if (here->type != tt_identifier) {
-                parse_error(here, "expected identifier");
-                skip_line(&here);
-                continue;
-            }
-            const char *name = here->text;
-            here = here->next;
-            if (here->type != tt_integer) {
-                printf("%d\n", here->type);
-                parse_error(here, "expected integer");
-                skip_line(&here);
-                continue;
-            }
-
-            if (!add_label(&output.info->first_label, name, here->i)) {
-                parse_error(here, "error creating constant");
-                skip_line(&here);
-                continue;
-            }
-            skip_line(&here);
-            continue;
-        }
-
-        if (strcmp(here->text, ".include") == 0) {
-            parse_error(here, "(internal) encountered .include directive after pre-processing");
+        if (strcmp(here->text, ".include") == 0
+            || strcmp(here->text, ".define") == 0) {
+            parse_error(here,
+                        "(internal) encountered %s directive after pre-processing",
+                        here->text);
             skip_line(&here);
             continue;
         }
