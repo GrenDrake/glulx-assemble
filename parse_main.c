@@ -282,7 +282,7 @@ struct operand* parse_operand(struct token **from, struct output_state *output) 
             op->value = 0;
             op->known_value = TRUE;
         } else {
-            struct label_def *label = get_label(output->first_label, here->text);
+            struct label_def *label = get_label(output->info->first_label, here->text);
             if (label) {
                 op->value = label->pos;
                 op->known_value = TRUE;
@@ -344,11 +344,11 @@ int operand_size(const struct operand *op) {
 /* ************************************************************************** *
  * PARSE_TOKENS FUNCTION                                                      *
  * ************************************************************************** */
-int parse_tokens(struct token_list *list, const char *output_filename) {
-    struct output_state output = { 2048, TRUE };
+int parse_tokens(struct token_list *list, struct program_info *info) {
+    struct output_state output = { info, TRUE };
     int has_errors = 0;
 
-    FILE *out = fopen(output_filename, "wb+");
+    FILE *out = fopen(info->output_file, "wb+");
     output.out = out;
     if (!out) {
         printf("could not open output file\n");
@@ -383,7 +383,7 @@ int parse_tokens(struct token_list *list, const char *output_filename) {
         }
 
         if (here->next && here->next->type == tt_colon) {
-            if (!add_label(&output.first_label, here->text, output.code_position)) {
+            if (!add_label(&output.info->first_label, here->text, output.code_position)) {
                 parse_error(here, "could not create label (already exists?)");
             }
             here = here->next->next;
@@ -450,8 +450,8 @@ int parse_tokens(struct token_list *list, const char *output_filename) {
                 ++output.code_position;
             }
             output.in_header = FALSE;
-            output.ram_start = output.code_position;
-            add_label(&output.first_label, "_RAMSTART", output.ram_start);
+            output.info->ram_start = output.code_position;
+            add_label(&output.info->first_label, "_RAMSTART", output.info->ram_start);
             skip_line(&here);
             continue;
         }
@@ -468,7 +468,7 @@ int parse_tokens(struct token_list *list, const char *output_filename) {
                             here->i,
                             (here->i / 256 + 1) * 256);
             }
-            output.extended_memory = here->i;
+            output.info->extended_memory = here->i;
             skip_line(&here);
             continue;
         }
@@ -485,7 +485,7 @@ int parse_tokens(struct token_list *list, const char *output_filename) {
                             here->i,
                             (here->i / 256 + 1) * 256);
             }
-            output.stack_size = here->i;
+            output.info->stack_size = here->i;
             skip_line(&here);
             continue;
         }
@@ -506,7 +506,7 @@ int parse_tokens(struct token_list *list, const char *output_filename) {
                 continue;
             }
 
-            if (!add_label(&output.first_label, name, here->i)) {
+            if (!add_label(&output.info->first_label, name, here->i)) {
                 parse_error(here, "error creating constant");
                 skip_line(&here);
                 continue;
@@ -709,10 +709,10 @@ int parse_tokens(struct token_list *list, const char *output_filename) {
                 patch->name = str_dup(cur_op->name);
                 patch->position = output.code_position;
                 patch->position_after = after_pos;
-                if (output.patch_list) {
-                    patch->next = output.patch_list;
+                if (output.info->patch_list) {
+                    patch->next = output.info->patch_list;
                 }
-                output.patch_list = patch;
+                output.info->patch_list = patch;
             }
 
             switch(operand_size(cur_op)) {
@@ -770,22 +770,22 @@ int parse_tokens(struct token_list *list, const char *output_filename) {
  * FINAL BINARY OUPUT                                                         *
  * ************************************************************************** */
     if (output.in_header) {
-        fprintf(stdout, "%s: missing .end_header directive\n", output_filename);
+        fprintf(stdout, "%s: missing .end_header directive\n", info->output_file);
     }
 
     while (output.code_position % 256 != 0) {
         fputc(0, output.out);
         ++output.code_position;
     }
-    output.end_memory = output.code_position;
-    add_label(&output.first_label, "_EXTSTART", output.end_memory);
-    add_label(&output.first_label, "_ENDMEM", output.end_memory + output.extended_memory);
+    output.info->end_memory = output.code_position;
+    add_label(&output.info->first_label, "_EXTSTART", output.info->end_memory);
+    add_label(&output.info->first_label, "_ENDMEM", output.info->end_memory + output.info->extended_memory);
 
 
 /* ************************************************************************** *
  * PROCESS BACKPATCH LIST                                                     *
  * ************************************************************************** */
-    struct backpatch *patch = output.patch_list;
+    struct backpatch *patch = output.info->patch_list;
 #ifdef DEBUG
     FILE *patch_file = fopen("out_patches.txt", "wt");
 #endif
@@ -794,7 +794,7 @@ int parse_tokens(struct token_list *list, const char *output_filename) {
         fprintf(patch_file,"%s  %x  %x  ", patch->name, patch->position, patch->position_after);
 #endif
 
-        struct label_def *label = get_label(output.first_label, patch->name);
+        struct label_def *label = get_label(output.info->first_label, patch->name);
         if (label) {
             int pos = label->pos;
 
@@ -809,7 +809,7 @@ int parse_tokens(struct token_list *list, const char *output_filename) {
             write_word(out, pos);
         } else {
             fprintf(stdout, "%s: unknown identifier ~%s~\n",
-                    output_filename, patch->name);
+                    info->output_file, patch->name);
         }
 
         patch = patch->next;
@@ -835,21 +835,21 @@ int parse_tokens(struct token_list *list, const char *output_filename) {
     fputc(0x01, output.out);
     fputc(0x02, output.out);
     // other fields
-    write_word(out, output.ram_start);
-    write_word(out, output.end_memory);
-    write_word(out, output.end_memory + output.extended_memory);
-    write_word(out, output.stack_size);
+    write_word(out, output.info->ram_start);
+    write_word(out, output.info->end_memory);
+    write_word(out, output.info->end_memory + output.info->extended_memory);
+    write_word(out, output.info->stack_size);
 
-    struct label_def *label = get_label(output.first_label, "start");
+    struct label_def *label = get_label(output.info->first_label, "start");
     if (label) {
         unsigned start_address = label->pos;
         write_word(out, start_address);
     } else {
         write_word(out, 0);
-        fprintf(stdout, "%s: missing start label\n", output_filename);
+        fprintf(stdout, "%s: missing start label\n", info->output_file);
     }
 
-    write_word(out, output.string_table);
+    write_word(out, 0); // string table (not implemented)
     write_word(out, 0); // checksum placeholder
     // gasm marker
     fputc('g', output.out);
@@ -879,9 +879,9 @@ int parse_tokens(struct token_list *list, const char *output_filename) {
     fclose(out);
 #ifdef DEBUG
     FILE *label_file = fopen("out_labels.txt", "wt");
-    dump_labels(label_file, output.first_label);
+    dump_labels(label_file, output.info->first_label);
     fclose(label_file);
 #endif
-    free_labels(output.first_label);
+    free_labels(output.info->first_label);
     return !has_errors;
 }

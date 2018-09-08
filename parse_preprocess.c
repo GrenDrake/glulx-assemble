@@ -7,7 +7,7 @@
 #include "assemble.h"
 
 
-int parse_preprocess(struct token_list *tokens) {
+int parse_preprocess(struct token_list *tokens, struct program_info *info) {
     int found_errors = FALSE;
     struct token *here = tokens->first;
 

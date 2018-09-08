@@ -97,22 +97,30 @@ struct mnemonic {
     int last_operand_is_relative;
 };
 
-struct output_state {
+struct program_info {
+    const char *output_file;
     int stack_size;
     int in_header;
 
-    int code_position;
     int ram_start;
     int extended_memory;
     int end_memory;
-    int string_table;
-    const char *current_function;
-    int local_count;
-    FILE *out;
-    FILE *debug_out;
-    struct local_list *local_names;
+
     struct label_def *first_label;
     struct backpatch *patch_list;
+};
+
+struct output_state {
+    struct program_info *info;
+    int in_header;
+
+    int code_position;
+    const char *current_function;
+    struct local_list *local_names;
+    int local_count;
+
+    FILE *out;
+    FILE *debug_out;
 };
 
 
@@ -140,8 +148,8 @@ void skip_line(struct token **current);
 void parse_error(struct token *where, const char *err_msg, ...);
 int token_check_identifier(struct token *token, const char *text);
 
-int parse_preprocess(struct token_list *tokens);
-int parse_tokens(struct token_list *list, const char *output_filename);
+int parse_preprocess(struct token_list *tokens, struct program_info *info);
+int parse_tokens(struct token_list *list, struct program_info *info);
 
 extern struct mnemonic codes[];
 

@@ -33,7 +33,9 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    if (!parse_preprocess(tokens)) {
+    struct program_info info = { outfile, 2048 };
+
+    if (!parse_preprocess(tokens, &info)) {
         printf("Errors occured during preprocessing.\n");
         return 1;
     }
@@ -43,7 +45,7 @@ int main(int argc, char *argv[]) {
         dump_token_list(tokens_file, tokens);
         fclose(tokens_file);
     }
-    parse_tokens(tokens, outfile);
+    parse_tokens(tokens, &info);
     free_token_list(tokens);
     return 0;
 }
