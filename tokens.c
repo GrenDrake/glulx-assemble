@@ -14,9 +14,15 @@ struct token* new_token(enum token_type type, const char *text, struct lexer_sta
     struct token *current = malloc(sizeof(struct token));
     if (!current) return NULL;
 
-    current->source_file = str_dup(state->file);
-    current->line = state->line;
-    current->column = state->column;
+    if (state) {
+        current->source_file = str_dup(state->file);
+        current->line = state->line;
+        current->column = state->column;
+    } else {
+        current->source_file = str_dup("(no source)");
+        current->line = 0;
+        current->column = 0;
+    }
     current->next = NULL;
 
     current->type = type;
@@ -62,9 +68,15 @@ struct token* new_rawint_token(int value, struct lexer_state *state) {
     struct token *current = malloc(sizeof(struct token));
     if (!current) return NULL;
 
-    current->source_file = str_dup(state->file);
-    current->line = state->line;
-    current->column = state->column;
+    if (state) {
+        current->source_file = str_dup(state->file);
+        current->line = state->line;
+        current->column = state->column;
+    } else {
+        current->source_file = str_dup("(no source)");
+        current->line = 0;
+        current->column = 0;
+    }
     current->next = NULL;
     current->type = tt_integer;
     current->text = NULL;
