@@ -9,12 +9,15 @@ int main(int argc, char *argv[]) {
     const char *outfile = "output.ulx";
 
     int flag_dump_labels = FALSE;
+    int flag_dump_pretokens = FALSE;
     int flag_dump_tokens = FALSE;
     int flag_dump_patches = FALSE;
     int filename_counter = 0;
 
     for (int i = 1; i < argc; ++i) {
-        if (strcmp(argv[i], "-dump-tokens") == 0) {
+        if (strcmp(argv[i], "-dump-pretokens") == 0) {
+            flag_dump_pretokens = TRUE;
+        } else if (strcmp(argv[i], "-dump-tokens") == 0) {
             flag_dump_tokens = TRUE;
         } else if (strcmp(argv[i], "-dump-labels") == 0) {
             flag_dump_labels = TRUE;
@@ -39,6 +42,12 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    if (flag_dump_pretokens) {
+        FILE *tokens_file = fopen("out_pretokens.txt", "wt");
+        dump_token_list(tokens_file, tokens);
+        fclose(tokens_file);
+    }
+
     struct program_info info = { outfile, 2048 };
 
     if (!parse_preprocess(tokens, &info)) {
@@ -51,6 +60,7 @@ int main(int argc, char *argv[]) {
         dump_token_list(tokens_file, tokens);
         fclose(tokens_file);
     }
+
     if (!parse_tokens(tokens, &info)) {
         printf("Errors occured during parse & build.\n");
         if (remove(info.output_file) != 0) {
