@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
 
     struct token_list *tokens = lex_file(infile);
     if (tokens == NULL) {
-        printf("Errors occured.\n");
+        printf("Errors occured during lexing.\n");
         return 1;
     }
 
@@ -51,7 +51,10 @@ int main(int argc, char *argv[]) {
         dump_token_list(tokens_file, tokens);
         fclose(tokens_file);
     }
-    parse_tokens(tokens, &info);
+    if (!parse_tokens(tokens, &info)) {
+        printf("Errors occured during parse & build.\n");
+        return 1;
+    }
 
     if (flag_dump_labels) {
         FILE *label_file = fopen("out_labels.txt", "wt");
