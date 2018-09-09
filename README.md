@@ -1,4 +1,4 @@
-# glulx-assemble
+﻿# glulx-assemble
 
 glulx-assemble is an assembler for creating [glulx](https://www.eblong.com/zarf/glulx/) program files. It is a re-imagined version of my previous project
 [GGASM](https://github.com/GrenDrake/ggasm) written using C99. The main intent
@@ -70,6 +70,13 @@ An instruction statement consists of an opcode mnemonic followed by zero or more
 | Local variable name    | ```index```      | The name of a local variable declared in the last encountered function header. |
 | Local variable index   | ```#2```         | A local variable by position. |
 | Named constant         | ```MAX_LENGTH``` | Created with the ```.define``` directive. |
+
+There is also a special mnemonic ```opcode``` which allows the use of custom opcodes not known to the assembler. The word ```opcode``` may be immediately followed by ```rel``` to indicate that the last operand should be treated as a relative value akin to the jump directives in glulx. Next is the actual number to be used for the opcode followed by all the operands as normal.
+
+```
+opcode 112 32             ; print a single space character
+opcode rel $20 some_label ; jump to "some_label"
+```
 
 ### Directives
 

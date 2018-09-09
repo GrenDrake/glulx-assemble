@@ -611,16 +611,32 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
 /* ************************************************************************** *
  * MNEMONIC PROCESSING                                                        *
  * ************************************************************************** */
+        struct mnemonic customCode = { "custom opcode", -1, -1, FALSE };
         struct mnemonic *m = codes;
         struct token *mnemonic_start = here;
-        while (m->name && strcmp(m->name, here->text) != 0) {
-            ++m;
-        }
-        if (m->name == NULL) {
-            parse_error(mnemonic_start, "unknown mnemonic %s", here->text);
-            has_errors = TRUE;
-            skip_line(&here);
-            continue;
+        if (strcmp(here->text, "opcode") == 0) {
+            m = &customCode;
+            here = here->next;
+            if (token_check_identifier(here, "rel")) {
+                here = here->next;
+                customCode.last_operand_is_relative= TRUE;
+            }
+            if (!here->type) {
+                parse_error(here,
+                            "expected integer, but found %s",
+                            token_name(here));
+            }
+            customCode.opcode = here->i;
+        } else {
+            while (m->name && strcmp(m->name, here->text) != 0) {
+                ++m;
+            }
+            if (m->name == NULL) {
+                parse_error(mnemonic_start, "unknown mnemonic %s", here->text);
+                has_errors = TRUE;
+                skip_line(&here);
+                continue;
+            }
         }
 
 #ifdef DEBUG
@@ -664,7 +680,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
             }
         }
 
-        if (operand_count != m->operand_count) {
+        if (m->operand_count >= 0 && operand_count != m->operand_count) {
             parse_error(mnemonic_start,
                         "bad operand count for %s; expected %d, but found %d.",
                         m->name, m->operand_count, operand_count);
