@@ -16,7 +16,7 @@ void expect_eol(struct token **current) {
 
     here = here->next;
     if (here->type != tt_eol) {
-        parse_error(here, "expected EOL (ignoring excess tokens)");
+        report_error(&here->origin, "expected EOL (ignoring excess tokens)");
         while (here && here->type != tt_eol) {
             here = here->next;
         }
@@ -92,21 +92,6 @@ void report_error(struct origin *origin, const char *err_text, ...) {
     va_list args;
     va_start(args, err_text);
     vfprintf(stderr, err_text, args);
-    va_end(args);
-}
-
-void parse_error(struct token *where, const char *err_msg, ...) {
-    char msg_buf[MAX_ERROR_LENGTH];
-
-    va_list args;
-    va_start(args, err_msg);
-    vsnprintf(msg_buf, MAX_ERROR_LENGTH, err_msg, args);
-
-    printf("%s:%d:%d %s\n",
-           where->origin.filename,
-           where->origin.line,
-           where->origin.column,
-           msg_buf);
     va_end(args);
 }
 

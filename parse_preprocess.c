@@ -25,7 +25,7 @@ int parse_preprocess(struct token_list *tokens, struct program_info *info) {
             here = here->next;
 
             if (here->type != tt_identifier) {
-                parse_error(here, "expected identifier");
+                report_error(&here->origin, "expected identifier");
                 skip_line(&here);
                 continue;
             }
@@ -33,21 +33,21 @@ int parse_preprocess(struct token_list *tokens, struct program_info *info) {
             here = here->next;
 
             if (here->type != tt_integer) {
-                parse_error(here, "expected integer, found %s", token_name(here));
+                report_error(&here->origin, "expected integer, found %s", token_name(here));
                 skip_line(&here);
                 found_errors = TRUE;
                 continue;
             }
 
             if (get_label(info->first_label, name) != NULL) {
-                parse_error(here, "name %s already in use", name);
+                report_error(&here->origin, "name %s already in use", name);
                 skip_line(&here);
                 found_errors = TRUE;
                 continue;
             }
 
             if (!add_label(&info->first_label, name, here->i)) {
-                parse_error(here, "error creating constant");
+                report_error(&here->origin, "error creating constant");
                 skip_line(&here);
                 found_errors = TRUE;
                 continue;
@@ -63,20 +63,20 @@ int parse_preprocess(struct token_list *tokens, struct program_info *info) {
             struct token_list *new_tokens = NULL;
 
             if (!here->next) {
-                parse_error(here, "Unexpected end of tokens");
+                report_error(&here->origin, "Unexpected end of tokens");
                 return FALSE;
             }
             here = here->next;
 
             if (here->type != tt_string) {
-                parse_error(here, "Expected string");
+                report_error(&here->origin, "Expected string");
                 skip_line(&here);
                 found_errors = TRUE;
                 continue;
             }
 
             if (here->next && here->next->type != tt_eol) {
-                parse_error(here, "Expected EOL");
+                report_error(&here->origin, "Expected EOL");
                 skip_line(&here);
                 found_errors = TRUE;
                 continue;

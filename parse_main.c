@@ -79,7 +79,7 @@ static int parse_string_data(struct token *first,
     struct token *here = first->next;
 
     if (here->type != tt_string) {
-        parse_error(here, "expected string");
+        report_error(&here->origin, "expected string");
         return FALSE;
     }
 
@@ -111,7 +111,7 @@ static int parse_unicode_data(struct token *first,
     struct token *here = first->next;
 
     if (here->type != tt_string) {
-        parse_error(here, "expected string");
+        report_error(&here->origin, "expected string");
         return FALSE;
     }
 
@@ -143,7 +143,7 @@ static int data_zeroes(struct token *first, struct output_state *output) {
     struct token *here = first->next;
 
     if (here->type != tt_integer) {
-        parse_error(here, "expected integer, found %s", token_name(here));
+        report_error(&here->origin, "expected integer, found %s", token_name(here));
         return FALSE;
     }
 
@@ -173,7 +173,7 @@ static int data_bytes(struct token *first, struct output_state *output, int widt
                 fprintf(output->debug_out, " %d", here->i);
 #endif
                 if (!value_fits(operand->value, width)) {
-                    parse_error(op_start, "(warning) value is larger than storage specification and will be truncated");
+                    report_error(&op_start->origin, "(warning) value is larger than storage specification and will be truncated");
                 }
                 write_variable(output->out, operand->value, width);
                 output->code_position += width;
@@ -221,7 +221,7 @@ static int start_function(struct token *first, struct output_state *output) {
             struct local_list *last = NULL;
             while (here && here->type != tt_eol) {
                 if (here->type != tt_identifier) {
-                    parse_error(here, "expected identifier, found %s", token_name(here));
+                    report_error(&here->origin, "expected identifier, found %s", token_name(here));
                     found_errors = TRUE;
                 } else {
                     struct local_list *local = malloc(sizeof(struct local_list));
@@ -351,7 +351,7 @@ struct operand* parse_operand(struct token **from, struct output_state *output) 
             }
         }
     } else {
-        parse_error(here, "unexpected token found");
+        report_error(&here->origin, "unexpected token found");
         from = &here->next;
         free(op);
         return NULL;
@@ -420,7 +420,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
         }
 
         if (here->type != tt_identifier) {
-            parse_error(here, "expected identifier");
+            report_error(&here->origin, "expected identifier");
             has_errors = 1;
             skip_line(&here);
             continue;
@@ -428,7 +428,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
 
         if (here->next && here->next->type == tt_colon) {
             if (!add_label(&output.info->first_label, here->text, output.code_position)) {
-                parse_error(here, "could not create label (already exists?)");
+                report_error(&here->origin, "could not create label (already exists?)");
                 has_errors = TRUE;
             }
             here = here->next->next;
@@ -501,7 +501,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
 
         if (strcmp(here->text, ".end_header") == 0) {
             if (!output.in_header) {
-                parse_error(here, "ended header when not in header");
+                report_error(&here->origin, "ended header when not in header");
                 has_errors = TRUE;
                 skip_line(&here);
                 continue;
@@ -521,13 +521,13 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
         if (strcmp(here->text, ".extra_memory") == 0) {
             here = here->next;
             if (here->type != tt_integer) {
-                parse_error(here, "expected integer, found %s", token_name(here));
+                report_error(&here->origin, "expected integer, found %s", token_name(here));
                 has_errors = TRUE;
                 skip_line(&here);
                 continue;
             }
             if (here->i % 256) {
-                parse_error(here, "extra memory must be multiple of 256 (currently %d, next multiple %d)",
+                report_error(&here->origin, "extra memory must be multiple of 256 (currently %d, next multiple %d)",
                             here->i,
                             (here->i / 256 + 1) * 256);
                 has_errors = TRUE;
@@ -540,13 +540,13 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
         if (strcmp(here->text, ".stack_size") == 0) {
             here = here->next;
             if (here->type != tt_integer) {
-                parse_error(here, "expected integer, found %s", token_name(here));
+                report_error(&here->origin, "expected integer, found %s", token_name(here));
                 has_errors = TRUE;
                 skip_line(&here);
                 continue;
             }
             if (here->i % 256) {
-                parse_error(here, "stack size must be multiple of 256 (currently %d, next multiple %d)",
+                report_error(&here->origin, "stack size must be multiple of 256 (currently %d, next multiple %d)",
                             here->i,
                             (here->i / 256 + 1) * 256);
                 has_errors = TRUE;
@@ -558,7 +558,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
 
         if (strcmp(here->text, ".include") == 0
             || strcmp(here->text, ".define") == 0) {
-            parse_error(here,
+            report_error(&here->origin,
                         "(internal) encountered %s directive after pre-processing",
                         here->text);
             has_errors = TRUE;
@@ -569,7 +569,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
         if (strcmp(here->text, ".include_binary") == 0) {
             here = here->next;
             if (here->type != tt_string) {
-                parse_error(here, "expected string, found %s", token_name(here));
+                report_error(&here->origin, "expected string, found %s", token_name(here));
                 has_errors = TRUE;
                 skip_line(&here);
                 continue;
@@ -577,7 +577,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
 
             FILE *bindata = fopen(here->text, "rt");
             if (!bindata) {
-                parse_error(here, "Could not read binary file ~%s~.", here->text);
+                report_error(&here->origin, "Could not read binary file ~%s~.", here->text);
                 has_errors = TRUE;
                 skip_line(&here);
                 continue;
@@ -602,7 +602,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
         }
 
         if (here->text[0] == '.') {
-            parse_error(here, "unknown directive %s", here->text);
+            report_error(&here->origin, "unknown directive %s", here->text);
             has_errors = TRUE;
             skip_line(&here);
             continue;
@@ -622,7 +622,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
                 customCode.last_operand_is_relative= TRUE;
             }
             if (!here->type) {
-                parse_error(here,
+                report_error(&here->origin,
                             "expected integer, but found %s",
                             token_name(here));
             }
@@ -632,7 +632,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
                 ++m;
             }
             if (m->name == NULL) {
-                parse_error(mnemonic_start, "unknown mnemonic %s", here->text);
+                report_error(&mnemonic_start->origin, "unknown mnemonic %s", here->text);
                 has_errors = TRUE;
                 skip_line(&here);
                 continue;
@@ -681,7 +681,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
         }
 
         if (m->operand_count >= 0 && operand_count != m->operand_count) {
-            parse_error(mnemonic_start,
+            report_error(&mnemonic_start->origin,
                         "bad operand count for %s; expected %d, but found %d.",
                         m->name, m->operand_count, operand_count);
             has_errors = TRUE;
@@ -800,7 +800,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
                     output.code_position += 4;
                     break;
                 default:
-                    parse_error(here, "(internal) Bad operand size");
+                    report_error(&here->origin, "(internal) Bad operand size");
                     has_errors = TRUE;
             }
 #ifdef DEBUG
@@ -836,11 +836,12 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
     }
 
 
+    struct origin objectfile_origin = { (char*)info->output_file, -1 };
 /* ************************************************************************** *
  * FINAL BINARY OUPUT                                                         *
  * ************************************************************************** */
     if (output.in_header) {
-        fprintf(stdout, "%s: missing .end_header directive\n", info->output_file);
+        report_error(&objectfile_origin, "missing .end_header directive\n");
         has_errors = TRUE;
     }
 
@@ -868,15 +869,14 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
 
             fseek(out, patch->position, SEEK_SET);
             if (!value_fits(patch->value_final, patch->max_width)) {
-                fprintf(stderr,
-                        "%s: (warning) value of ~%s~ is larger than storage specification and will be truncated\n",
-                        output.info->output_file,
+                report_error(&objectfile_origin,
+                        "(warning) value of ~%s~ is larger than storage specification and will be truncated\n",
                         patch->name);
             }
             write_variable(out, patch->value_final, patch->max_width);
         } else {
-            fprintf(stdout, "%s: unknown identifier ~%s~\n",
-                    info->output_file, patch->name);
+            report_error(&objectfile_origin, "%s: unknown identifier ~%s~\n",
+                    patch->name);
             has_errors = TRUE;
         }
 
@@ -911,7 +911,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
         write_word(out, start_address);
     } else {
         write_word(out, 0);
-        fprintf(stdout, "%s: missing start label\n", info->output_file);
+        report_error(&objectfile_origin, "missing start label\n", info->output_file);
         has_errors = TRUE;
     }
 

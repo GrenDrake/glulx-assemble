@@ -66,7 +66,7 @@ static int is_identifier(int ch) {
 }
 
 struct token_list* lex_file(const char *filename) {
-    struct lexer_state state = { { FALSE, NULL, 1, 1 } };
+    struct lexer_state state = { { NULL, 1, 1 } };
     state.origin.filename = str_dup(filename);
     FILE *source_file = fopen(filename, "rt");
     if (!source_file) {

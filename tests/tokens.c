@@ -68,7 +68,7 @@ const char* test_new_token_general(void) {
 
 const char* test_new_token_source_location(void) {
     char *filename = str_dup("source");
-    struct lexer_state state = { { FALSE, filename, 5, 2 } };
+    struct lexer_state state = { { filename, 5, 2 } };
     const char *source_string = "source_string";
     struct token *token = new_token(tt_identifier, source_string, &state);
 
@@ -85,7 +85,7 @@ const char* test_new_token_source_location(void) {
 
 const char* test_new_rawint_token(void) {
     char *filename = str_dup("source");
-    struct lexer_state state = { { FALSE, filename, 5, 2 } };
+    struct lexer_state state = { { filename, 5, 2 } };
 
     struct token *token = new_rawint_token(69, &state);
     ASSERT_TRUE(token->type == tt_integer, "token has correct type");
