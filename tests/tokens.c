@@ -67,15 +67,15 @@ const char* test_new_token_general(void) {
 }
 
 const char* test_new_token_source_location(void) {
-    const char *filename = "source";
-    struct lexer_state state = { filename, 5, 2 };
+    char *filename = str_dup("source");
+    struct lexer_state state = { { FALSE, filename, 5, 2 } };
     const char *source_string = "source_string";
     struct token *token = new_token(tt_identifier, source_string, &state);
 
-    ASSERT_TRUE(token->line == 5, "token has correct line number");
-    ASSERT_TRUE(token->column == 2, "token has correct line number");
-    ASSERT_TRUE(token->source_file != filename, "token has own copy of source filename");
-    ASSERT_TRUE(strcmp(token->source_file, filename) == 0, "token filename is correct");
+    ASSERT_TRUE(token->origin.line == 5, "token has correct line number");
+    ASSERT_TRUE(token->origin.column == 2, "token has correct line number");
+    ASSERT_TRUE(token->origin.filename != filename, "token has own copy of source filename");
+    ASSERT_TRUE(strcmp(token->origin.filename, filename) == 0, "token filename is correct");
 
     free_token(token);
     return NULL;
@@ -84,17 +84,17 @@ const char* test_new_token_source_location(void) {
 
 
 const char* test_new_rawint_token(void) {
-    const char *filename = "source";
-    struct lexer_state state = { filename, 5, 2 };
+    char *filename = str_dup("source");
+    struct lexer_state state = { { FALSE, filename, 5, 2 } };
 
     struct token *token = new_rawint_token(69, &state);
     ASSERT_TRUE(token->type == tt_integer, "token has correct type");
     ASSERT_TRUE(token->i == 69, "token has correct int value");
     ASSERT_TRUE(token->text == NULL, "token text is NULL");
-    ASSERT_TRUE(token->line == 5, "token has correct line number");
-    ASSERT_TRUE(token->column == 2, "token has correct line number");
-    ASSERT_TRUE(token->source_file != filename, "token has own copy of source filename");
-    ASSERT_TRUE(strcmp(token->source_file, filename) == 0, "token filename is correct");
+    ASSERT_TRUE(token->origin.line == 5, "token has correct line number");
+    ASSERT_TRUE(token->origin.column == 2, "token has correct line number");
+    ASSERT_TRUE(token->origin.filename != filename, "token has own copy of source filename");
+    ASSERT_TRUE(strcmp(token->origin.filename, filename) == 0, "token filename is correct");
 
     free_token(token);
     return NULL;

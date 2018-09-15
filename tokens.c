@@ -5,6 +5,27 @@
 
 #include "assemble.h"
 
+/* ************************************************************************* *
+ * Manipulate origins                                                        *
+ * ************************************************************************* */
+void no_origin(struct origin *dest) {
+    dest->line = 0;
+    dest->column = 0;
+    dest->filename = str_dup("no source");
+    dest->dynamic = TRUE;
+}
+
+void copy_origin(struct origin *dest, struct origin *src) {
+    dest->line = src->line;
+    dest->column = src->column;
+    dest->filename = str_dup(src->filename);
+    dest->dynamic = FALSE;
+}
+
+void free_origin(struct origin *origin) {
+    free(origin->filename);
+}
+
 
 /* ************************************************************************* *
  * Token Manipulation                                                        *
@@ -14,15 +35,8 @@ struct token* new_token(enum token_type type, const char *text, struct lexer_sta
     struct token *current = malloc(sizeof(struct token));
     if (!current) return NULL;
 
-    if (state) {
-        current->source_file = str_dup(state->file);
-        current->line = state->line;
-        current->column = state->column;
-    } else {
-        current->source_file = str_dup("(no source)");
-        current->line = 0;
-        current->column = 0;
-    }
+    if (state)  copy_origin(&current->origin, &state->origin);
+    else        no_origin(&current->origin);
     current->next = NULL;
 
     current->type = type;
@@ -68,15 +82,8 @@ struct token* new_rawint_token(int value, struct lexer_state *state) {
     struct token *current = malloc(sizeof(struct token));
     if (!current) return NULL;
 
-    if (state) {
-        current->source_file = str_dup(state->file);
-        current->line = state->line;
-        current->column = state->column;
-    } else {
-        current->source_file = str_dup("(no source)");
-        current->line = 0;
-        current->column = 0;
-    }
+    if (state)  copy_origin(&current->origin, &state->origin);
+    else        no_origin(&current->origin);
     current->next = NULL;
     current->type = tt_integer;
     current->text = NULL;
@@ -144,7 +151,7 @@ void remove_token(struct token_list *list, struct token *token) {
 
 void free_token(struct token *token) {
     free(token->text);
-    free(token->source_file);
+    free_origin(&token->origin);
     free(token);
 }
 
@@ -206,9 +213,9 @@ void dump_token_list(FILE *dest, struct token_list *list) {
 
     while (current) {
         fprintf(dest, "%s:%d:%d  :  %s ",
-               current->source_file,
-               current->line,
-               current->column,
+               current->origin.filename,
+               current->origin.line,
+               current->origin.column,
                token_name(current));
         if (current->text == NULL) {
             fprintf(dest, "(null)");

@@ -86,9 +86,9 @@ void parse_error(struct token *where, const char *err_msg, ...) {
     vsnprintf(msg_buf, MAX_ERROR_LENGTH, err_msg, args);
 
     printf("%s:%d:%d %s\n",
-           where->source_file,
-           where->line,
-           where->column,
+           where->origin.filename,
+           where->origin.line,
+           where->origin.column,
            msg_buf);
     va_end(args);
 }

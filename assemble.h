@@ -35,14 +35,22 @@ enum operand_type {
     ot_afterram
 };
 
+/* Stores the location in the original source file that a particular structure
+ * originated from.
+ */
+struct origin {
+    int dynamic;        // item was dynamically generated; no origin file exists
+    char *filename;     // name of the file item originated on
+    int line, column;   // line and column item originated on
+};
+
 struct local_list {
     char *name;
     struct local_list *next;
 };
 
 struct token {
-    char *source_file;
-    int line, column;
+    struct origin origin;
 
     enum token_type type;
     char *text;
@@ -53,9 +61,7 @@ struct token {
 };
 
 struct lexer_state {
-    const char *file;
-    int line;
-    int column;
+    struct origin origin;
 
     size_t text_pos;
     size_t text_length;
@@ -125,6 +131,9 @@ struct output_state {
     FILE *debug_out;
 };
 
+void copy_origin(struct origin *dest, struct origin *src);
+void copy_origin(struct origin *dest, struct origin *src);
+void free_origin(struct origin *origin);
 
 struct token* new_token(enum token_type type, const char *text, struct lexer_state *state);
 struct token* new_rawint_token(int value, struct lexer_state *state);

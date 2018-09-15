@@ -10,7 +10,7 @@
 static int next_char(struct lexer_state *state);
 static char* lexer_read_string(int quote_char, struct lexer_state *state);
 static int is_identifier(int ch);
-static void lexer_error(struct lexer_state *state, const char *err_text);
+static void lexer_error(struct origin *origin, const char *err_text);
 
 /* ************************************************************************* *
  * Core Lexer                                                                *
@@ -24,10 +24,10 @@ static int next_char(struct lexer_state *state) {
     int next = state->text[state->text_pos];
     ++state->text_pos;
     if (next == '\n') {
-        ++state->line;
-        state->column = 0;
+        ++state->origin.line;
+        state->origin.column = 0;
     } else {
-        ++state->column;
+        ++state->origin.column;
     }
     return next;
 }
@@ -50,7 +50,7 @@ static char* lexer_read_string(int quote_char, struct lexer_state *state) {
     string_size = string_end - string_start - 1;
 
     if (in == 0) {
-        lexer_error(&start, "unterminated string");
+        lexer_error(&start.origin, "unterminated string");
         return NULL;
     } else {
         char *string_text = malloc(string_size + 1);
@@ -62,8 +62,8 @@ static char* lexer_read_string(int quote_char, struct lexer_state *state) {
     }
 }
 
-static void lexer_error(struct lexer_state *state, const char *err_text) {
-    printf("%s:%d:%d %s\n", state->file, state->line, state->column, err_text);
+static void lexer_error(struct origin *origin, const char *err_text) {
+    printf("%s:%d:%d %s\n", origin->filename, origin->line, origin->column, err_text);
 }
 
 static int is_identifier(int ch) {
@@ -71,7 +71,8 @@ static int is_identifier(int ch) {
 }
 
 struct token_list* lex_file(const char *filename) {
-    struct lexer_state state = { filename, 1, 1 };
+    struct lexer_state state = { { FALSE, NULL, 1, 1 } };
+    state.origin.filename = str_dup(filename);
     FILE *source_file = fopen(filename, "rt");
     if (!source_file) {
         fprintf(stderr, "Could not open source file ~%s~.\n", filename);
@@ -90,6 +91,7 @@ struct token_list* lex_file(const char *filename) {
     fclose(source_file);
 
     struct token_list *result = lex_core(&state);
+    free_origin(&state.origin);
     free(state.text);
     return result;
 }
@@ -111,7 +113,7 @@ struct token_list* lex_core(struct lexer_state *state) {
         } else if (in == '\\') {
             in = next_char(state);
             if (in != '\n') {
-                lexer_error(state, "unexpected character; \\ only permitted at end of line");
+                lexer_error(&state->origin, "unexpected character; \\ only permitted at end of line");
             } else {
                 in = next_char(state);
             }
@@ -157,7 +159,7 @@ struct token_list* lex_core(struct lexer_state *state) {
                 buf_pos = 1;
                 in = next_char(state);
                 if (!isdigit(in)) {
-                    lexer_error(&start, "expected numeric value after '-'");
+                    lexer_error(&start.origin, "expected numeric value after '-'");
                     has_errors = 1;
                 }
             }
@@ -165,7 +167,7 @@ struct token_list* lex_core(struct lexer_state *state) {
                 if (in == '.') {
                     if (found_dot) {
                         bad_dot = TRUE;
-                        lexer_error(&start, "malformed floating point number");
+                        lexer_error(&start.origin, "malformed floating point number");
                         has_errors = 1;
                     } else {
                         found_dot = TRUE;
@@ -200,7 +202,7 @@ struct token_list* lex_core(struct lexer_state *state) {
                 return NULL;
             } else {
                 if (cleanup_string(text)) {
-                    lexer_error(&start, "bad string escape");
+                    lexer_error(&start.origin, "bad string escape");
                     has_errors = 1;
                 }
                 a_token = new_token(tt_string, text, &start);
@@ -214,17 +216,17 @@ struct token_list* lex_core(struct lexer_state *state) {
                 has_errors = TRUE;
                 return NULL;
             } else if (strlen(text) == 0) {
-                lexer_error(&start, "empty character literal");
+                lexer_error(&start.origin, "empty character literal");
                 has_errors = TRUE;
             } else {
                 if (cleanup_string(text)) {
-                    lexer_error(&start, "bad string escape");
+                    lexer_error(&start.origin, "bad string escape");
                     has_errors = 1;
                 }
                 int text_pos = 0;
                 int cp = utf8_next_char(text, &text_pos);
                 if (text[text_pos] != 0) {
-                    lexer_error(&start, "character literal too long");
+                    lexer_error(&start.origin, "character literal too long");
                     has_errors = 1;
                 }
                 free(text);
@@ -232,7 +234,7 @@ struct token_list* lex_core(struct lexer_state *state) {
                 add_token(tokens, a_token);
             }
         } else {
-            lexer_error(state, "unexpected character");
+            lexer_error(&state->origin, "unexpected character");
             has_errors = 1;
             in = next_char(state);
         }
