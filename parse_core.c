@@ -79,8 +79,6 @@ void skip_line(struct token **current) {
 }
 
 void report_error(struct origin *origin, const char *err_text, ...) {
-    char msg_buf[MAX_ERROR_LENGTH];
-
     if (origin) {
         fputs(origin->filename, stderr);
         if (origin->line >= 0) {
