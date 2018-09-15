@@ -159,6 +159,7 @@ void free_patches(struct backpatch *first);
 void expect_eol(struct token **current);
 struct token* remove_line(struct token_list *list, struct token *start);
 void skip_line(struct token **current);
+void report_error(struct origin *origin, const char *err_text, ...);
 void parse_error(struct token *where, const char *err_msg, ...);
 int token_check_identifier(struct token *token, const char *text);
 
