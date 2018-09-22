@@ -56,6 +56,21 @@ int parse_preprocess(struct token_list *tokens, struct program_info *info) {
             continue;
         }
 
+        // encoded strings
+        if (token_check_identifier(here, ".encoded")) {
+            here = here->next;
+            if (here->type != tt_string) {
+                report_error(&here->origin, "expected string, found %s", token_name(here));
+                skip_line(&here);
+                found_errors = TRUE;
+                continue;
+            }
+
+            string_add_to_frequencies(&info->strings, here->text);
+            skip_line(&here);
+            continue;
+        }
+
         // included files
         if (token_check_identifier(here, ".include")) {
             struct token *before = here->prev;

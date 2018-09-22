@@ -462,6 +462,20 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
             continue;
         }
 
+        if (strcmp(here->text, ".encoded") == 0) {
+            here = here->next;
+            if (here->type != tt_string) {
+                report_error(&here->origin, "Expected string");
+                skip_line(&here);
+                continue;
+            }
+            int size = encode_string(output.out, &output.info->strings, here->text);
+            if (size < 0) has_errors = TRUE;
+            output.code_position += size;
+            skip_line(&here);
+            continue;
+        }
+
         if (strcmp(here->text, ".byte") == 0) {
             if (!data_bytes(here, &output, 1)) {
                 has_errors = TRUE;
@@ -597,6 +611,49 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
 #endif
             output.code_position += binsize;
 
+            skip_line(&here);
+            continue;
+        }
+
+        if (strcmp(here->text, ".string_table") == 0) {
+            output.info->string_table = output.code_position;
+            int table_start = output.code_position + 12;
+
+            int table_size = 12;
+            struct string_node *node = info->strings.first;
+            while (node) {
+                table_size += node_size(node);
+                node = node->next;
+            }
+
+            write_word(output.out, table_size); // table size (bytes)
+            write_word(output.out, node_list_size(info->strings.first)); // table size (nodes)
+            write_word(output.out, info->strings.root->position + table_start); // root node
+            output.code_position += 12;
+
+            node = info->strings.first;
+            while (node) {
+                switch(node->type) {
+                    case nt_end:
+                        write_byte(output.out, 1);
+                        break;
+                    case nt_branch:
+                        write_byte(output.out, 0);
+                        write_word(output.out, node->d.branch.left->position + table_start);
+                        write_word(output.out, node->d.branch.right->position + table_start);
+                        break;
+                    case nt_char:
+                        write_byte(output.out, 2);
+                        write_byte(output.out, node->d.a_char.c);
+                        break;
+                    case nt_unichar:
+                        write_byte(output.out, 4);
+                        write_word(output.out, node->d.a_char.c);
+                        break;
+                }
+                output.code_position += node_size(node);
+                node = node->next;
+            }
             skip_line(&here);
             continue;
         }
@@ -915,7 +972,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
         has_errors = TRUE;
     }
 
-    write_word(out, 0); // string table (not implemented)
+    write_word(out, output.info->string_table);
     write_word(out, 0); // checksum placeholder
     // gasm marker
     fputc('g', output.out);

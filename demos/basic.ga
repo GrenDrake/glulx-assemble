@@ -12,6 +12,7 @@
 
 .stack_size 2048
 .extra_memory 256
+.string_table
 .end_header
 
 mainWindow: .zero 4
@@ -30,11 +31,16 @@ setup: .function
     glk glkSetWindow 1 0
     return 0
 
-
-strUnicode:                 .unicode "こんにちは世界。\n"
+; reports result of verifying gamefile
 strVerifyFailed:            .string  "Verify failed.\n"
 strVerifySuccess:           .string  "Verify succeeded!\n"
-strHelloWorld:              .string "Hello World.\n\n"
+; general strings for prettifying output
+unicodeStringStr:           .string "Unicode string: "
+encodedStringStr:           .string "Encoded string: "
+; an unencoded unicode string
+strUnicode:                 .unicode "こんにちは世界。\n"
+; a Huffman encoded string
+strHelloWorld:              .encoded "Hello Мир.\n\n"
 
 start: .function
     call setup 0 0
@@ -45,7 +51,9 @@ start: .function
 verify_good:
     streamstr strVerifySuccess
 endverify:
+    streamstr unicodeStringStr
     streamstr strUnicode
+    streamstr encodedStringStr
     streamstr strHelloWorld
 
     return 0

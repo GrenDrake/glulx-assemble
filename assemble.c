@@ -18,6 +18,7 @@ int main(int argc, char *argv[]) {
     int flag_dump_pretokens = FALSE;
     int flag_dump_tokens = FALSE;
     int flag_dump_patches = FALSE;
+    int flag_dump_stringtable = FALSE;
     int filename_counter = 0;
 
     for (int i = 1; i < argc; ++i) {
@@ -29,6 +30,8 @@ int main(int argc, char *argv[]) {
             flag_dump_labels = TRUE;
         } else if (strcmp(argv[i], "-dump-patches") == 0) {
             flag_dump_patches = TRUE;
+        } else if (strcmp(argv[i], "-dump-stringtable") == 0) {
+            flag_dump_stringtable = TRUE;
         } else if (strcmp(argv[i], "-no-time") == 0) {
             flag_timestamp_type = ts_notime;
         } else if (strcmp(argv[i], "-timestamp") == 0) {
@@ -91,6 +94,13 @@ int main(int argc, char *argv[]) {
         printf("Errors occured during preprocessing.\n");
         return 1;
     }
+    string_build_tree(&info.strings);
+
+    if (flag_dump_stringtable) {
+        FILE *strings_file = fopen("out_strings.txt", "wt");
+        dump_string_frequencies(strings_file, &info.strings);
+        fclose(strings_file);
+    }
 
     if (flag_dump_tokens) {
         FILE *tokens_file = fopen("out_tokens.txt", "wt");
@@ -116,6 +126,12 @@ int main(int argc, char *argv[]) {
         FILE *patch_file = fopen("out_patches.txt", "wt");
         dump_patches(patch_file, &info);
         fclose(patch_file);
+    }
+
+    if (info.strings.input_bytes > 0) {
+        printf("Compressed %d bytes of text into %d bytes.\n",
+                info.strings.input_bytes,
+                info.strings.output_bytes);
     }
 
     free_patches(info.patch_list);
