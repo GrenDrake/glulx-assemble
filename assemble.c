@@ -5,8 +5,8 @@
 #include "assemble.h"
 
 int main(int argc, char *argv[]) {
+    struct program_info info = { "output.ulx", 2048 };
     const char *infile  = "input.ga";
-    const char *outfile = "output.ulx";
 
     int flag_dump_labels = FALSE;
     int flag_dump_pretokens = FALSE;
@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
                 infile = argv[i];
                 filename_counter = 1;
             } else if (filename_counter == 1) {
-                outfile = argv[i];
+                info.output_file = argv[i];
                 filename_counter = 2;
             } else {
                 fprintf(stderr, "Unknown argument \"%s\" passed.\n", argv[i]);
@@ -47,8 +47,6 @@ int main(int argc, char *argv[]) {
         dump_token_list(tokens_file, tokens);
         fclose(tokens_file);
     }
-
-    struct program_info info = { outfile, 2048 };
 
     if (!parse_preprocess(tokens, &info)) {
         printf("Errors occured during preprocessing.\n");
