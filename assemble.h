@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "utility.h"
 
+#define MAX_TIMESTAMP_SIZE  13
 #define HEADER_SIZE     40
 #define MAX_OPERANDS    12
 
@@ -107,7 +108,7 @@ struct mnemonic {
 struct program_info {
     const char *output_file;
     int stack_size;
-    int in_header;
+    char timestamp[MAX_TIMESTAMP_SIZE];
 
     int ram_start;
     int extended_memory;

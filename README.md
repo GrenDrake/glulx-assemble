@@ -18,6 +18,8 @@ copyright holder desires.
 
 glulx-assemble is a command line program. It can be run without arguments, in which case it will read from *input.ga* and create *output.ulx*. It can also be passed a number of arguments, as seen in the table below, as well as the names of an input and output file (in that order).
 
+A short header will be added after the standard glulx header that includes the 4-byte string "gasm" and a twelve byte timestamp in the format "YYYYMMDDHHMM". The contents of the timestamp can be customized through the command line to consist of any text up to twelve bytes, including an empty string.
+
 Most of these options are intended for debugging the assembler and will not be generally useful.
 
 | Argument           | Description |
@@ -26,6 +28,8 @@ Most of these options are intended for debugging the assembler and will not be g
 | ```-dump-patches``` | Dumps a list of all the back-patches used by the assembler in creating the final program file. |
 | ```-dump-pretokens``` | Dumps a list of all the tokens in a the main source file before the preprocessing phase begins. |
 | ```-dump-tokens``` | Dumps a list of all the tokens in a program after the preprocessing phase has completed. |
+| ```-no-time```     | Exclude the current time from the default timestamp included in the generated file. |
+| ```-timestamp```   | Replace the default timestamp with a custom timestamp provided after this argument. |
 
 ```
 glulx-assemble -dump_tokens basic.ga basic.ulx

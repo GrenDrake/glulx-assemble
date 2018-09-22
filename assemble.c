@@ -1,3 +1,4 @@
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +9,11 @@ int main(int argc, char *argv[]) {
     struct program_info info = { "output.ulx", 2048 };
     const char *infile  = "input.ga";
 
+    enum {
+        ts_standard,
+        ts_notime,
+        ts_custom
+    } flag_timestamp_type = ts_standard;
     int flag_dump_labels = FALSE;
     int flag_dump_pretokens = FALSE;
     int flag_dump_tokens = FALSE;
@@ -23,6 +29,21 @@ int main(int argc, char *argv[]) {
             flag_dump_labels = TRUE;
         } else if (strcmp(argv[i], "-dump-patches") == 0) {
             flag_dump_patches = TRUE;
+        } else if (strcmp(argv[i], "-no-time") == 0) {
+            flag_timestamp_type = ts_notime;
+        } else if (strcmp(argv[i], "-timestamp") == 0) {
+            ++i;
+            if (i >= argc) {
+                fprintf(stderr, "-timestamp passed but no timestamp provided\n");
+                return 1;
+            }
+            if (strlen(argv[i]) >= MAX_TIMESTAMP_SIZE) {
+                fprintf(stderr, "max custom timestamp length is %d; provided stamp has length of %ld\n",
+                        MAX_TIMESTAMP_SIZE - 1, strlen(argv[i]));
+                return 1;
+            }
+            strncpy(info.timestamp, argv[i], MAX_TIMESTAMP_SIZE - 1);
+            flag_timestamp_type = ts_custom;
         } else {
             if (filename_counter == 0) {
                 infile = argv[i];
@@ -34,6 +55,24 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "Unknown argument \"%s\" passed.\n", argv[i]);
             }
         }
+    }
+
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    switch(flag_timestamp_type) {
+        case ts_custom:
+            break;
+        case ts_standard:
+            snprintf(info.timestamp, MAX_TIMESTAMP_SIZE,
+                    "%d%02d%02d%02d%02d",
+                    tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+                    tm.tm_hour, tm.tm_min);
+            break;
+        case ts_notime:
+            snprintf(info.timestamp, MAX_TIMESTAMP_SIZE,
+                    "%d%02d%02d",
+                    tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+            break;
     }
 
     struct token_list *tokens = lex_file(infile);

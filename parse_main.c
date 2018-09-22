@@ -922,6 +922,10 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
     fputc('a', output.out);
     fputc('s', output.out);
     fputc('m', output.out);
+    // twelve-byte timestamp
+    for (int i = 0; i < MAX_TIMESTAMP_SIZE - 1; ++i) {
+        write_byte(output.out, output.info->timestamp[i]);
+    }
 
 /* ************************************************************************** *
  * CALCULATE AND WRITE CHECKSUM                                               *
