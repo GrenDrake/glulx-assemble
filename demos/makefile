@@ -12,7 +12,7 @@ complex.ulx: complex.ga glk.ga $(ASSEMBLE)
 	$(ASSEMBLE) complex.ga complex.ulx
 
 model.ulx: model.ga glk.ga $(ASSEMBLE)
-	$(ASSEMBLE) model.ga model.ulx -dump-labels
+	$(ASSEMBLE) model.ga model.ulx
 
 clean:
 	$(RM) *.ulx out_*.txt
