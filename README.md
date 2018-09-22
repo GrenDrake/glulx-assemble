@@ -125,6 +125,12 @@ Every glulx program must create at least one function identified by the label ``
 .stack_size 2048
 ```
 
+**.string_table**: Tells the assembler to include the Huffman decoding table in this location. This is required in order to be able to display Huffman encoded strings. This directive can be included more than once; the tables will be effectively identical (though the program is permitted to modify one) and the last included table will be set as the default.
+
+```
+.string_table
+```
+
 #### File inclusion
 
 **.include**: Process another file as though its contents occurred at this point in the current file. glulx-assemble will look for included files relative to the current directory, not the directory the current source file is located in. No include guards are used; infinite include loops will freeze or crash the assembler.
@@ -153,6 +159,12 @@ These directives can be given labels or named constants as well as the various n
 
 ```
 .string "Hello world.\n"
+```
+
+**.encoded**: Includes a Huffman encoded string at the current location. In order to actually display an encoded string, the program must include the string decoding table via the .string_table directive.
+
+```
+.encoded "Hello Мир.\n"
 ```
 
 **.unicode**: Includes an unencoded unicode string at the current position. A glulx unicode string is a series of four-byte codepoints.
