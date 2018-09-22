@@ -91,6 +91,7 @@ void report_error(struct origin *origin, const char *err_text, ...) {
     va_start(args, err_text);
     vfprintf(stderr, err_text, args);
     va_end(args);
+    fputc('\n', stderr);
 }
 
 int token_check_identifier(struct token *token, const char *text) {
