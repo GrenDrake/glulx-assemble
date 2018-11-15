@@ -20,15 +20,16 @@ static int next_char(struct lexer_state *state) {
         return 0;
     }
 
-    int next = state->text[state->text_pos];
+    int old_here = state->text[state->text_pos];
     ++state->text_pos;
-    if (next == '\n') {
+
+    if (old_here == '\n') {
         ++state->origin.line;
         state->origin.column = 0;
     } else {
         ++state->origin.column;
     }
-    return next;
+    return old_here;
 }
 
 static char* lexer_read_string(int quote_char, struct lexer_state *state) {
