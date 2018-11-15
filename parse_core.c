@@ -16,7 +16,9 @@ void expect_eol(struct token **current) {
 
     here = here->next;
     if (here->type != tt_eol) {
-        report_error(&here->origin, "expected EOL (ignoring excess tokens)");
+        report_error(&here->origin,
+                     "expected EOL, but found %s (ignoring excess tokens)",
+                     token_name(here));
         while (here && here->type != tt_eol) {
             here = here->next;
         }
