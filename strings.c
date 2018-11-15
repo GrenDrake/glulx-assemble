@@ -81,6 +81,9 @@ int node_size(struct string_node *node) {
         case nt_end:        return 1;
         case nt_char:       return 2;
         case nt_unichar:    return 5;
+        default:
+            fprintf(stderr, "Unknown stringtable node type %d.\n", node->type);
+            return 0;
     }
 }
 
@@ -142,6 +145,9 @@ int string_node_contains(struct string_node *node, int c) {
             return string_node_contains(node->d.branch.left, c)
                     || string_node_contains(node->d.branch.right, c);
             break;
+        default:
+            fprintf(stderr, "Unknown stringtable node type %d.\n", node->type);
+            return FALSE;
     }
 }
 
