@@ -589,7 +589,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
                 continue;
             }
 
-            FILE *bindata = fopen(here->text, "rt");
+            FILE *bindata = fopen(here->text, "rb");
             if (!bindata) {
                 report_error(&here->origin, "Could not read binary file ~%s~.", here->text);
                 has_errors = TRUE;

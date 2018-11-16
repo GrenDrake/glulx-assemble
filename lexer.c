@@ -69,7 +69,7 @@ static int is_identifier(int ch) {
 struct token_list* lex_file(const char *filename) {
     struct lexer_state state = { { NULL, 1, 1 } };
     state.origin.filename = str_dup(filename);
-    FILE *source_file = fopen(filename, "rt");
+    FILE *source_file = fopen(filename, "rb");
     if (!source_file) {
         report_error(NULL, "Could not open source file ~%s~.\n", filename);
         return NULL;
