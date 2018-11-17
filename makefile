@@ -18,8 +18,11 @@ clean:
 	$(RM) src/*.o tests/*.o $(TARGET) test_parse_core test_utility test_tokens
 	cd demos && $(MAKE) clean
 
-tests: test_utility test_parse_core test_tokens
+tests: test_utility test_parse_core test_tokens test_vbuffer
 
+test_vbuffer: src/vbuffer.o tests/test.o tests/vbuffer.o
+	$(CC) src/vbuffer.o tests/test.o tests/vbuffer.o -o test_vbuffer
+	./test_vbuffer
 test_parse_core: tests/test.o tests/parse_core.o src/parse_core.o src/tokens.o src/utility.o
 	$(CC) tests/test.o tests/parse_core.o src/parse_core.o src/tokens.o src/utility.o -o test_parse_core
 	./test_parse_core
