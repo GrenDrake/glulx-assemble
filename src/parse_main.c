@@ -968,7 +968,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
 
     if (output.info->string_table == 0) {
         write_word(out, 0);
-        if (output.info->strings.input_bytes > 0) {
+        if (output.info->strings.first != NULL) {
             report_error(&objectfile_origin, "source contains encoded strings but does not include .string_table directive");
         }
     } else {
