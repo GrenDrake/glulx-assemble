@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "test.h"
-#include "../utility.h"
+#include "../src/utility.h"
 
 
 

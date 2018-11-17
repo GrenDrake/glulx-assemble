@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "test.h"
-#include "../assemble.h"
+#include "../src/assemble.h"
 
 
 
