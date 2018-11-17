@@ -931,7 +931,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
             }
             write_variable(out, patch->value_final, patch->max_width);
         } else {
-            report_error(&objectfile_origin, "%s: unknown identifier ~%s~\n",
+            report_error(&objectfile_origin, "unknown identifier ~%s~\n",
                     patch->name);
             has_errors = TRUE;
         }
