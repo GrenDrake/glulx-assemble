@@ -609,6 +609,12 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
         }
 
         if (strcmp(here->text, ".string_table") == 0) {
+            if (output.info->strings.first == NULL) {
+                // skip empty string tables
+                skip_line(&here);
+                continue;
+            }
+
             output.info->string_table = output.code_position;
             int table_start = output.code_position + 12;
 
