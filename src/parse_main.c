@@ -84,11 +84,12 @@ static int parse_string_data(struct token *first,
         return FALSE;
     }
 
-#ifdef DEBUG
-    fprintf(output->debug_out, "0x%08X string ~", output->code_position);
-    dump_string(output->debug_out, here->text, 32);
-    fprintf(output->debug_out, "~\n");
-#endif
+    if (output->info->debug_out) {
+        fprintf(output->info->debug_out, "0x%08X string ~", output->code_position);
+        dump_string(output->info->debug_out, here->text, 32);
+        fprintf(output->info->debug_out, "~\n");
+    }
+
     if (add_type_byte) {
         fputc(0xE0, output->out);
     }
@@ -116,11 +117,11 @@ static int parse_unicode_data(struct token *first,
         return FALSE;
     }
 
-#ifdef DEBUG
-    fprintf(output->debug_out, "0x%08X unicode ~", output->code_position);
-    dump_string(output->debug_out, here->text, 32);
-    fprintf(output->debug_out, "~\n");
-#endif
+    if (output->info->debug_out) {
+        fprintf(output->info->debug_out, "0x%08X unicode ~", output->code_position);
+        dump_string(output->info->debug_out, here->text, 32);
+        fprintf(output->info->debug_out, "~\n");
+    }
     fputc(0xE2, output->out);
     fputc(0, output->out);
     fputc(0, output->out);
@@ -148,9 +149,9 @@ static int data_zeroes(struct token *first, struct output_state *output) {
         return FALSE;
     }
 
-#ifdef DEBUG
-    fprintf(output->debug_out, "0x%08X zeroes (%d)\n", output->code_position, here->i);
-#endif
+    if (output->info->debug_out) {
+        fprintf(output->info->debug_out, "0x%08X zeroes (%d)\n", output->code_position, here->i);
+    }
     for (int i = 0; i < here->i; ++i) {
         fputc(0, output->out);
     }
@@ -161,18 +162,18 @@ static int data_zeroes(struct token *first, struct output_state *output) {
 
 static int data_bytes(struct token *first, struct output_state *output, int width) {
     struct token *here = first->next;
-#ifdef DEBUG
-    fprintf(output->debug_out, "0x%08X data(%d)", output->code_position, width);
-#endif
+    if (output->info->debug_out) {
+        fprintf(output->info->debug_out, "0x%08X data(%d)", output->code_position, width);
+    }
 
     while (here && here->type != tt_eol) {
         struct token *op_start = here;
         struct operand *operand = parse_operand(&here, output);
         if (operand) {
             if (operand->known_value) {
-#ifdef DEBUG
-                fprintf(output->debug_out, " %d", here->i);
-#endif
+                if (output->info->debug_out) {
+                    fprintf(output->info->debug_out, " %d", here->i);
+                }
                 if (!value_fits(operand->value, width)) {
                     report_error(&op_start->origin, "(warning) value is larger than storage specification and will be truncated");
                 }
@@ -195,9 +196,9 @@ static int data_bytes(struct token *first, struct output_state *output, int widt
             free(operand);
         }
     }
-#ifdef DEBUG
-    fprintf(output->debug_out, "\n");
-#endif
+    if (output->info->debug_out) {
+        fprintf(output->info->debug_out, "\n");
+    }
     return TRUE;
 }
 
@@ -206,9 +207,7 @@ static int start_function(struct token *first, struct output_state *output) {
     int found_errors = FALSE;
     struct token *here = first->next; // skip ".function"
     end_function(output);
-#ifdef DEBUG
     int start_pos = output->code_position;
-#endif
 
     if (here && here->type == tt_identifier && strcmp(here->text, "stk") == 0) {
         stack_based = TRUE;
@@ -249,24 +248,24 @@ static int start_function(struct token *first, struct output_state *output) {
     }
     output->code_position += 3;
 
-#ifdef DEBUG
-    fprintf(output->debug_out,
-            "\n0x%08X FUNCTION %s   %d LOCALS",
-            start_pos,
-            stack_based ? "(stk)" : "",
-            name_count);
-    if (output->local_names) {
-        fputc(':', output->debug_out);
-        struct local_list *cur = output->local_names;
-        while (cur) {
-            fprintf(output->debug_out,
-                    " %s",
-                    cur->name);
-            cur = cur->next;
+    if (output->info->debug_out) {
+        fprintf(output->info->debug_out,
+                "\n0x%08X FUNCTION %s   %d LOCALS",
+                start_pos,
+                stack_based ? "(stk)" : "",
+                name_count);
+        if (output->local_names) {
+            fputc(':', output->info->debug_out);
+            struct local_list *cur = output->local_names;
+            while (cur) {
+                fprintf(output->info->debug_out,
+                        " %s",
+                        cur->name);
+                cur = cur->next;
+            }
         }
+        fputc('\n', output->info->debug_out);
     }
-    fputc('\n', output->debug_out);
-#endif
 
     while (name_count > 0) {
         if (name_count > 255) {
@@ -400,13 +399,6 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
         printf("could not open output file\n");
         return FALSE;
     }
-#ifdef DEBUG
-    output.debug_out = fopen("out_debug.txt", "wt");
-    if (!output.debug_out) {
-        printf("could not open output file\n");
-        return FALSE;
-    }
-#endif
 
     // write empty header
     for (int i = 0; i < HEADER_SIZE; ++i) {
@@ -601,12 +593,14 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
                 continue;
             }
             fwrite(buffer->data, buffer->length, 1, out);
-#ifdef DEBUG
-            fprintf(output.debug_out, "0x%08X BINARY FILE ~%s~ (%d bytes)\n",
-                    output.code_position,
-                    here->text,
-                    buffer->length);
-#endif
+
+            if (output.info->debug_out) {
+                fprintf(output.info->debug_out, "0x%08X BINARY FILE ~%s~ (%d bytes)\n",
+                        output.code_position,
+                        here->text,
+                        buffer->length);
+            }
+
             vbuffer_free(buffer);
             output.code_position += buffer->length;
 
@@ -695,14 +689,14 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
             }
         }
 
-#ifdef DEBUG
-        fprintf(output.debug_out, "0x%08X ~%s~ %d/0x%x   (at 0x%lx)  ",
-                output.code_position,
-                here->text,
-                m->opcode,
-                m->opcode,
-                ftell(output.out));
-#endif
+        if (output.info->debug_out) {
+            fprintf(output.info->debug_out, "0x%08X ~%s~ %d/0x%x   (at 0x%lx)  ",
+                    output.code_position,
+                    here->text,
+                    m->opcode,
+                    m->opcode,
+                    ftell(output.out));
+        }
 
         if (m->opcode <= 0x7F) {
             write_byte(output.out, m->opcode);
@@ -772,9 +766,10 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
             }
         }
 
-#ifdef DEBUG
-        fprintf(output.debug_out, " types");
-#endif
+        if (output.info->debug_out) {
+            fprintf(output.info->debug_out, " types");
+        }
+
         // write operand types to file
         struct operand *cur_op = op_list;
         int type_byte = 0;
@@ -805,9 +800,9 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
                 type_byte |= my_type << 4;
                 fputc(type_byte, out);
                 ++output.code_position;
-#ifdef DEBUG
-        fprintf(output.debug_out, " %X", type_byte);
-#endif
+                if (output.info->debug_out) {
+                    fprintf(output.info->debug_out, " %X", type_byte);
+                }
             } else {
                 type_count = 1;
                 type_byte = my_type;
@@ -818,9 +813,9 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
         if (type_count) {
             fputc(type_byte, out);
             ++output.code_position;
-#ifdef DEBUG
-            fprintf(output.debug_out, " %X", type_byte);
-#endif
+            if (output.info->debug_out) {
+                fprintf(output.info->debug_out, " %X", type_byte);
+            }
         }
 
 
@@ -859,34 +854,34 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
                     report_error(&here->origin, "(internal) Bad operand size");
                     has_errors = TRUE;
             }
-#ifdef DEBUG
-            if (cur_op->type == ot_stack) {
-                fprintf(output.debug_out, " STACK");
-            } else {
-                switch(cur_op->type) {
-                    case ot_constant:   fputs(" c:", output.debug_out);   break;
-                    case ot_local:      fputs(" l:", output.debug_out);   break;
-                    case ot_indirect:   fputs(" i:", output.debug_out);   break;
-                    case ot_afterram:   fputs(" a:", output.debug_out);   break;
-                    default:
-                        fprintf(output.debug_out, " (bad operand type %d", cur_op->type);
-                }
-                if (cur_op->known_value) {
-                    fprintf(output.debug_out, "%d", cur_op->value);
+            if (output.info->debug_out) {
+                if (cur_op->type == ot_stack) {
+                    fprintf(output.info->debug_out, " STACK");
                 } else {
-                    fprintf(output.debug_out, "???");
+                    switch(cur_op->type) {
+                        case ot_constant:   fputs(" c:", output.info->debug_out);   break;
+                        case ot_local:      fputs(" l:", output.info->debug_out);   break;
+                        case ot_indirect:   fputs(" i:", output.info->debug_out);   break;
+                        case ot_afterram:   fputs(" a:", output.info->debug_out);   break;
+                        default:
+                            fprintf(output.info->debug_out, " (bad operand type %d", cur_op->type);
+                    }
+                    if (cur_op->known_value) {
+                        fprintf(output.info->debug_out, "%d", cur_op->value);
+                    } else {
+                        fprintf(output.info->debug_out, "???");
+                    }
                 }
             }
-#endif
 
 
 
             cur_op = cur_op->next;
         }
 
-#ifdef DEBUG
-        fprintf(output.debug_out, "\n");
-#endif
+        if (output.info->debug_out) {
+            fprintf(output.info->debug_out, "\n");
+        }
         skip_line(&here);
         continue;
     }

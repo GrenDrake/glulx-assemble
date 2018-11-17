@@ -158,6 +158,8 @@ struct program_info {
 
     struct label_def *first_label;
     struct backpatch *patch_list;
+
+    FILE *debug_out;
 };
 
 struct output_state {
@@ -170,7 +172,6 @@ struct output_state {
     int local_count;
 
     FILE *out;
-    FILE *debug_out;
 };
 
 void copy_origin(struct origin *dest, struct origin *src);

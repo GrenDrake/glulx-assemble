@@ -19,6 +19,7 @@ int main(int argc, char *argv[]) {
     int flag_dump_tokens = FALSE;
     int flag_dump_patches = FALSE;
     int flag_dump_stringtable = FALSE;
+    int flag_dump_debug = FALSE;
     int filename_counter = 0;
 
     for (int i = 1; i < argc; ++i) {
@@ -32,6 +33,8 @@ int main(int argc, char *argv[]) {
             flag_dump_patches = TRUE;
         } else if (strcmp(argv[i], "-dump-stringtable") == 0) {
             flag_dump_stringtable = TRUE;
+        } else if (strcmp(argv[i], "-dump-debug") == 0) {
+            flag_dump_debug = TRUE;
         } else if (strcmp(argv[i], "-no-time") == 0) {
             flag_timestamp_type = ts_notime;
         } else if (strcmp(argv[i], "-timestamp") == 0) {
@@ -108,12 +111,25 @@ int main(int argc, char *argv[]) {
         fclose(tokens_file);
     }
 
+    if (flag_dump_debug) {
+        info.debug_out = fopen("out_debug.txt", "wt");
+        if (!info.debug_out) {
+            info.debug_out = NULL;
+            printf("could not open debug dump file\n");
+            return FALSE;
+        }
+    }
+
     if (!parse_tokens(tokens, &info)) {
         printf("Errors occured during parse & build.\n");
         if (remove(info.output_file) != 0) {
             perror("Could not remove failed build file");
         }
         return 1;
+    }
+
+    if (flag_dump_debug) {
+        fclose(info.debug_out);
     }
 
     if (flag_dump_labels) {
