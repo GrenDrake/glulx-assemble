@@ -962,7 +962,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
         write_word(out, start_address);
     } else {
         write_word(out, 0);
-        report_error(&objectfile_origin, "missing start label\n", info->output_file);
+        report_error(&objectfile_origin, "missing start label", info->output_file);
         has_errors = TRUE;
     }
 
