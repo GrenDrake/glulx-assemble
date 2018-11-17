@@ -192,6 +192,7 @@ static int data_bytes(struct token *first, struct output_state *output, int widt
                 write_variable(output->out, 0, width);
                 output->code_position += width;
             }
+            free(operand);
         }
     }
 #ifdef DEBUG
