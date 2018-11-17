@@ -1,0 +1,629 @@
+; A simple "game" created to demonstrate a complex program written using
+; glulx-assemble.
+;
+; This is the game system library; the game specific code is located in
+; "mountain.ga". "GameSys" was created as a very simple demonstration of
+; creating a moderately complex program using glulx-assemble. In its current
+; form, GameSys lacks depth of implementation.
+;
+; Part of glulx-assemble
+; Copyright (C) 2018 Gren Drake
+; Released under the MIT license (see LICENSE.md)
+
+.include "glk.ga"
+
+.define MAJOR_VERSION   0
+.define MINOR_VERSION   4
+
+.define TRUE            1
+.define FALSE           0
+
+.define VERB_ONEWORD    0
+.define VERB_TWOWORD    1
+.define VERB_EITHER     2
+
+.define NORTH           0
+.define EAST            1
+.define SOUTH           2
+.define WEST            3
+
+.define OBJ_NAME    0
+.define OBJ_DESC    1
+.define OBJ_NORTH   2
+.define OBJ_EAST    3
+.define OBJ_SOUTH   4
+.define OBJ_WEST    5
+.define OBJ_PARENT  6
+.define OBJ_CHILD   7
+.define OBJ_SIBLING 8
+.define OBJ_FLAGS   9
+.define OBJ_VOCAB   10
+
+.define OF_STATIC   1
+.define OF_CONCEAL  2
+
+location:               .zero 4
+mainWindow:             .zero 4
+event:                  .zero 16
+commandbuf:             .zero 256
+firstWord:              .zero 4
+secondWord:             .zero 4
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+dropWord:       .cstring "drop"
+eWord:          .cstring "e"
+eastWord:       .cstring "east"
+examineWord:    .cstring "examine"
+getWord:        .cstring "get"
+goWord:         .cstring "go"
+helpWord:       .cstring "help"
+iWord:          .cstring "i"
+invWord:        .cstring "inv"
+inventoryWord:  .cstring "inventory"
+lWord:          .cstring "l"
+lookWord:       .cstring "look"
+meWord:         .cstring "me"
+nWord:          .cstring "n"
+northWord:      .cstring "north"
+playerWord:     .cstring "player"
+qWord:          .cstring "q"
+quitWord:       .cstring "quit"
+sWord:          .cstring "s"
+southWord:      .cstring "south"
+takeWord:       .cstring "take"
+versionWord:    .cstring "version"
+wWord:          .cstring "w"
+westWord:       .cstring "west"
+xWord:          .cstring "x"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+.define VOCAB_ENTRY_SIZE 12
+vocabTable:
+.word dropWord      verbDrop        VERB_TWOWORD
+.word examineWord   verbLook        VERB_TWOWORD
+.word getWord       verbTake        VERB_TWOWORD
+.word goWord        verbGo          VERB_TWOWORD
+.word helpWord      verbHelp        VERB_ONEWORD
+.word iWord         verbInventory   VERB_ONEWORD
+.word invWord       verbInventory   VERB_ONEWORD
+.word inventoryWord verbInventory   VERB_ONEWORD
+.word lookWord      verbLook        VERB_EITHER
+.word lWord         verbLook        VERB_EITHER
+.word qWord         verbQuit        VERB_ONEWORD
+.word quitWord      verbQuit        VERB_ONEWORD
+.word takeWord      verbTake        VERB_TWOWORD
+.word versionWord   verbVersion     VERB_ONEWORD
+.word xWord         verbLook        VERB_TWOWORD
+.word 0             0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+.define DIRECTION_ENTRY_SIZE 8
+directionTable:
+.word nWord NORTH
+.word northWord NORTH
+.word sWord SOUTH
+.word southWord SOUTH
+.word eWord EAST
+.word eastWord EAST
+.word wWord WEST
+.word westWord WEST
+.word 0         0
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+player_name:      .encoded "(player)"
+player_desc:      .encoded "You look the same as always."
+player:
+.word player_name player_desc               ; name  direction
+.word 0 0 0 0                               ; north east south west
+.word 0 0 0                                 ; parent child sibling
+.word OF_CONCEAL                            ; object flags
+.word meWord playerWord 0                   ; vocab words
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+getChild: .function         forObject
+        aload forObject OBJ_CHILD sp
+        return sp
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+getParent: .function        forObject
+        aload forObject OBJ_PARENT sp
+        return sp
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+getSibling: .function       forObject
+        aload forObject OBJ_SIBLING sp
+        return sp
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+getUnconcealedChild: .function       forObject        curChild
+        aload forObject OBJ_CHILD curChild
+    getUnconcealedChild_loop:
+        callfii objectHasFlag curChild OF_CONCEAL sp
+        jz sp getUnconcealedChild_found
+        jeq curChild 0 getUnconcealedChild_failed
+        aload curChild OBJ_SIBLING curChild
+        jump getUnconcealedChild_loop
+    getUnconcealedChild_found:
+        return curChild
+    getUnconcealedChild_failed:
+        return 0
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+getUnconcealedSibling: .function       forObject        curChild
+        aload forObject OBJ_SIBLING curChild
+    getUnconcealedSibling_loop:
+        callfii objectHasFlag curChild OF_CONCEAL sp
+        jz sp getUnconcealedSibling_found
+        jeq curChild 0 getUnconcealedSibling_failed
+        aload curChild OBJ_SIBLING curChild
+        jump getUnconcealedSibling_loop
+    getUnconcealedSibling_found:
+        return curChild
+    getUnconcealedSibling_failed:
+        return 0
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+objectForVocab: .function       vocabWord fromScope       curChild
+    objectForVocab_at:
+        callfi getChild fromScope curChild
+    objectForVocab_atLoop:
+        jz curChild objectForVocab_cantSee
+        callfii wordInVocab curChild vocabWord sp
+        jnz sp objectForVocab_found
+        callfi getSibling curChild curChild
+        jump objectForVocab_atLoop
+
+    objectForVocab_found:
+        return curChild
+    objectForVocab_cantSee:
+        return 0
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+objectHasFlag: .function        forObject flags     oFlags
+        aload forObject OBJ_FLAGS oFlags
+        bitand flags oFlags sp
+        jeq sp flags objectHasFlag_yes
+        return FALSE
+    objectHasFlag_yes:
+        return TRUE
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+objListString:          .encoded ", "
+objectListFrom: .function       theObject       nextObject
+        jz theObject objectListFrom_allDone
+    objectListFrom_loop:
+        callfi printObject theObject 0
+        callfi getUnconcealedSibling theObject nextObject
+        jz nextObject objectListFrom_allDone
+        streamstr objListString
+        copy nextObject theObject
+        jump objectListFrom_loop
+    objectListFrom_allDone:
+        return 0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+objectMove: .function       toMove toWhere      curChild nextChild
+        callfi objectRemove toMove 0
+        astore toMove OBJ_PARENT toWhere
+
+        aload toWhere OBJ_CHILD curChild
+        jz curChild objectMove_firstChild
+    objectMove_loop:
+        aload curChild OBJ_SIBLING nextChild
+        jz nextChild objectMove_sibling
+        copy nextChild curChild
+        jump objectMove_loop
+    objectMove_sibling:
+        astore curChild OBJ_SIBLING toMove
+        return 0
+    objectMove_firstChild:
+        astore toWhere OBJ_CHILD toMove
+        return 0
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+objectRemove: .function     toRemove        curChild nextChild fromParent
+        aload toRemove OBJ_PARENT fromParent
+        jz fromParent objectRemove_allDone ; already located nowhere
+        astore toRemove OBJ_PARENT 0
+        aload fromParent OBJ_CHILD curChild
+        jeq curChild toRemove objectRemove_firstChild
+
+    objectRemove_searchChildList:
+        aload curChild OBJ_SIBLING nextChild
+        jz nextChild objectRemove_allDone ; broken object list / not a sibling
+        jeq nextChild toRemove objectRemove_removeHere
+        copy nextChild curChild
+        jump objectRemove_searchChildList
+    objectRemove_removeHere:
+        aload toRemove OBJ_SIBLING sp
+        astore curChild OBJ_SIBLING sp
+        astore toRemove OBJ_SIBLING 0
+        return 0
+    objectRemove_firstChild:
+        aload toRemove OBJ_SIBLING sp
+        astore fromParent OBJ_CHILD sp
+        astore toRemove OBJ_SIBLING 0
+        return 0
+    objectRemove_allDone:
+        return 0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+printCString: .function     text        pos here
+        copy 0 pos
+    printCString_loop:
+        aloadb text pos here
+        jeq here 0 printCString_doneString
+        streamchar here
+        add pos 1 pos
+        jump printCString_loop
+    printCString_doneString:
+        return 0
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+printObject: .function      forObject
+    aload forObject OBJ_NAME sp
+    streamstr sp
+    return 0
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+setupGlk: .function
+    setiosys ioSysGlk 0
+
+    copy 0 sp
+    copy wintypeTextBuffer sp
+    copy 0 sp
+    copy 0 sp
+    copy 0 sp
+    glk $23 5 *mainWindow
+
+    copy *mainWindow sp
+    glk glkSetWindow 1 0
+    return TRUE
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+strcmp: .function       left right      pos left_c right_c
+        copy 0 pos
+    strcmp_loop:
+        aloadb left pos left_c
+        aloadb right pos right_c
+        jlt left_c right_c strcmp_lessthan
+        jgt left_c right_c strcmp_greaterthan
+        add 1 pos pos
+        jne left_c 0 strcmp_loop
+        return 0
+    strcmp_lessthan:
+        return -1
+    strcmp_greaterthan:
+        return 1
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+wordInVocab: .function      forObject wordAddr      wordNo vocabWord
+        copy OBJ_VOCAB wordNo
+    wordInVocab_loop:
+        aload forObject wordNo vocabWord
+        jz vocabWord wordInVocab_no
+        callfii strcmp wordAddr vocabWord sp
+        jz sp wordInVocab_yes
+        add wordNo 1 wordNo
+        jump wordInVocab_loop
+
+    wordInVocab_yes:
+        return TRUE
+    wordInVocab_no:
+        return FALSE
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+unexpectedEventString:  .encoded "Received unexpected GLK event\n"
+unknownCommandString:   .encoded "Unknown command \""
+unknownCommandEndString:.encoded "\".\n"
+blankCommandString:     .encoded "Huh?\n"
+promptString:           .encoded "\n> "
+tooManyWordsString:     .encoded "You used too many words for this game to understand.\n"
+oneWordString:          .encoded "That command only needs one word.\n"
+twoWordString:          .encoded "That command needs two words.\n"
+; run the main program loop
+start: .function 3
+        callf setupGlk 0
+        callf initialise 0
+        callf verbVersion 0
+        streamchar 10
+        callf verbLookAround 0
+
+    start_mainLoopBegin:
+        streamstr promptString;
+        mzero 32 commandbuf
+        copy 0 sp
+        copy 255 sp
+        copy commandbuf sp
+        copy *mainWindow sp
+        glk glkRequestLineEvent 4 0
+
+    start_inputLoop:
+        copy event sp
+        glk glkSelect 1 0
+
+        jeq *event evtypeArrange   start_evWindowArrange
+        jeq *event evtypeLineInput start_evLineInput
+        streamstr unexpectedEventString
+        jump start_inputLoop
+
+    start_evWindowArrange:
+        jump start_inputLoop
+    start_evLineInput:
+        aload event 1 #0
+        jne #0 *mainWindow start_inputLoop
+
+;       commandbuf now contains a line of input from the main window.
+;       The line we have received in commandbuf is not null-terminated.
+;       We handle that first.
+        aload event 2 #0
+        astoreb commandbuf #0 0
+
+;       Then squash to lower-case. (this does not use the newer unicode aware
+;       functions... oh well)
+        copy 0 #0
+    start_inputCaseLoop:
+        aloadb commandbuf #0 #1
+        jeq #1 0 start_endCaseLoop
+        copy #1 sp
+        glk glkCharToLower 1 #1
+        astoreb commandbuf #0 #1
+        add #0 1 #0
+        jump start_inputCaseLoop
+    start_endCaseLoop:
+
+; find and isolate the first two words of input
+        copy 0 *firstWord
+        copy 0 *secondWord
+        copy 0 #0
+    start_findStartOfFirstWord:
+        aloadb commandbuf #0 #1
+        jeq #1 0 start_endOfCommandString         ; found end of string
+        jne #1 ' ' start_foundStartOfFirstWord   ; found the start of the word!
+        add #0 1 #0
+        jump start_findStartOfFirstWord           ; otherwise skip the space
+    start_foundStartOfFirstWord:
+        add #0 commandbuf *firstWord
+    start_findEndOfFirstWord:
+        add #0 1 #0
+        aloadb commandbuf #0 #1
+        jeq #1 0 start_foundEndOfFirstWord
+        jeq #1 ' ' start_foundEndOfFirstWord
+        jump start_findEndOfFirstWord
+    start_foundEndOfFirstWord:
+        astoreb commandbuf #0 0
+        jeq #1 0 start_endOfCommandString
+        add #0 1 #0
+    start_findStartOfSecondWord:
+        aloadb commandbuf #0 #1
+        jeq #1 0 start_endOfCommandString
+        jne #1 ' ' start_foundStartOfSecondWord
+        add #0 1 #0
+        jump start_findStartOfSecondWord
+    start_foundStartOfSecondWord:
+        add #0 commandbuf *secondWord
+    start_findEndOfSecondWord:
+        add #0 1 #0
+        aloadb commandbuf #0 #1
+        jeq #1 0 start_foundEndOfSecondWord
+        jeq #1 ' ' start_foundEndOfSecondWord
+        jump start_findEndOfSecondWord
+    start_foundEndOfSecondWord:
+        astoreb commandbuf #0 0
+        jump start_endOfCommandString
+
+    start_endOfCommandString:
+        jeq *firstWord 0 start_emptyVerb
+        copy vocabTable #0
+    start_verbSearchLoop:
+        aload #0 0 #1
+        jeq #1 0 start_badVerb
+        callfii strcmp *firstWord #1 #2
+        jeq #2 0 start_foundVerb
+        add #0 VOCAB_ENTRY_SIZE #0
+        jump start_verbSearchLoop
+
+    start_emptyVerb:
+        streamstr blankCommandString
+        jump start_mainLoopBegin
+    start_badVerb:
+        streamstr unknownCommandString
+        callfi printCString *firstWord 0
+        streamstr unknownCommandEndString
+        jump start_mainLoopBegin
+    start_tooManyWords:
+        streamstr tooManyWordsString
+        jump start_mainLoopBegin
+
+    start_foundVerb:
+        aload #0 2 #1
+        jeq #1 VERB_EITHER start_commandGood
+        jeq #1 VERB_ONEWORD start_oneWordCommand
+        jnz *secondWord start_commandGood
+        streamstr twoWordString
+        jump start_mainLoopBegin
+    start_oneWordCommand:
+        jz *secondWord start_commandGood
+        streamstr oneWordString
+        jump start_mainLoopBegin
+
+    start_commandGood:
+        aload #0 1 sp
+        callf sp 0
+        jump start_mainLoopBegin
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+droppedString:          .encoded "Taken.\n";
+notHoldingThatString:   .encoded "You aren't holding that.\n"
+verbDrop: .function     target
+        callfii objectForVocab *secondWord player target
+        jz target verbDrop_notHolding
+        aload player OBJ_PARENT sp
+        callfii objectMove target *location 0
+        streamstr droppedString
+        return 0
+    verbDrop_notHolding:
+        streamstr notHoldingThatString
+        return 0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+badDirString:   .encoded "Not a valid direction.\n"
+cantGoString:   .encoded "Can't go that way.\n"
+verbGo: .function       curDir dirWord target
+        copy directionTable curDir
+    verbGo_loop:
+        aload curDir 0 dirWord
+        jz dirWord verbGo_badDir
+        callfii strcmp *secondWord dirWord sp
+        jz sp verbGo_foundDir
+        add curDir DIRECTION_ENTRY_SIZE curDir
+        jump verbGo_loop
+
+    verbGo_foundDir:
+        aload curDir 1 curDir
+        add curDir OBJ_NORTH curDir
+        aload *location curDir target
+        jz target verbGo_cantGo
+        copy target *location
+        callfii objectMove player target 0
+        callf verbLookAround 0
+        return 0
+    verbGo_cantGo:
+        streamstr cantGoString
+        return 0
+    verbGo_badDir:
+        streamstr badDirString
+        return 0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+verbHelp: .function
+    return 0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+youAreHoldingString:        .encoded "You are holding: "
+holdingNothingString:       .encoded "nothing.\n"
+verbInventory: .function        curChild
+        streamstr youAreHoldingString
+        callfi getChild player curChild
+        jz curChild verbInventory_nothing
+        callfi objectListFrom curChild 0
+        streamstr endObjListString
+        return 0
+
+    verbInventory_nothing:
+        streamstr holdingNothingString
+        return 0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+cantSeeThatString:  .encoded "You can't see that here.\n"
+verbLook: .function     target
+        jnz *secondWord verbLook_at
+        callf verbLookAround 0
+        return 0;
+    verbLook_at:
+        callfii objectForVocab *secondWord *location target
+        jz target verbLook_cantSee
+        aload target OBJ_DESC sp
+        streamstr sp
+        streamchar 10
+        return 0
+    verbLook_cantSee:
+        streamstr cantSeeThatString
+        return 0
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+preNameString:          .encoded "* "
+postNameString:         .encoded " *\n"
+youCanSeeString:        .encoded "\nYou can see here: "
+nowhereLocationString:  .encoded "* Nowhere *\nYou are nowhere!\n"
+endObjListString:       .encoded ".\n"
+verbLookAround: .function       curChild
+        jz *location verbLook_nowhere
+        streamstr preNameString
+        copy styleSubheader sp
+        glk glkSetStyle 1 0
+        callfi printObject *location 0
+        copy styleNormal sp
+        glk glkSetStyle 1 0
+        streamstr postNameString
+        aload *location OBJ_DESC sp
+        streamstr sp
+        streamchar 10
+        callfi getUnconcealedChild *location curChild
+        jz curChild verbLook_done
+        streamstr youCanSeeString
+        callfi objectListFrom curChild 0
+        streamstr endObjListString
+    verbLook_done:
+        return 0
+    verbLook_nowhere:
+        streamstr nowhereLocationString
+        return 0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+verbQuit: .function
+        glk glkExit 0 0
+        return 0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+takenString:        .encoded "Taken.\n";
+cantTakeSelfString: .encoded "Can't take yourself.\n"
+cantTakeThatString: .encoded "Can't take that.\n"
+verbTake: .function     target
+        callfii objectForVocab *secondWord *location target
+        jz target verbTake_cantSee
+        jeq target player verbTake_cantTakeSelf
+        callfii objectHasFlag target OF_STATIC sp
+        jnz sp verbTake_cantTakeThat
+        callfii objectMove target player 0
+        streamstr takenString
+        return 0
+    verbTake_cantTakeThat:
+        streamstr cantTakeThatString
+        return 0
+    verbTake_cantTakeSelf:
+        streamstr cantTakeSelfString
+        return 0
+    verbTake_cantSee:
+        streamstr cantSeeThatString
+        return 0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+versionString:      .encoded "glulx-assemble GameSys library version "
+verbVersion: .function
+        copy styleHeader sp
+        glk glkSetStyle 1 0
+        streamstr gamenameString
+        copy styleNormal sp
+        glk glkSetStyle 1 0
+        streamchar 10
+        streamstr headlineString
+        streamchar 10
+        copy styleEmphasized sp
+        glk glkSetStyle 1 0
+        streamstr versionString
+        streamnum MAJOR_VERSION
+        streamchar '.'
+        streamnum MINOR_VERSION
+        streamchar 10
+        copy styleNormal sp
+        glk glkSetStyle 1 0
+        return 0
