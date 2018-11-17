@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "assemble.h"
+#include "vbuffer.h"
 
 
 static int parse_string_data(struct token *first,
@@ -589,27 +590,24 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
                 continue;
             }
 
-            FILE *bindata = fopen(here->text, "rb");
-            if (!bindata) {
+            struct vbuffer *buffer = vbuffer_new();
+            int result = vbuffer_readfile(buffer, here->text);
+            if (!result) {
                 report_error(&here->origin, "Could not read binary file ~%s~.", here->text);
                 has_errors = TRUE;
                 skip_line(&here);
+                vbuffer_free(buffer);
                 continue;
             }
-            fseek(bindata, 0, SEEK_END);
-            size_t binsize = ftell(bindata);
-            fseek(bindata, 0, SEEK_SET);
-            char *buffer = malloc(binsize);
-            fread(buffer, binsize, 1, bindata);
-            fclose(bindata);
-            fwrite(buffer, binsize, 1, out);
+            fwrite(buffer->data, buffer->length, 1, out);
 #ifdef DEBUG
-            fprintf(output.debug_out, "0x%08X BINARY FILE ~%s~ (%ld bytes)\n",
+            fprintf(output.debug_out, "0x%08X BINARY FILE ~%s~ (%d bytes)\n",
                     output.code_position,
                     here->text,
-                    binsize);
+                    buffer->length);
 #endif
-            output.code_position += binsize;
+            vbuffer_free(buffer);
+            output.code_position += buffer->length;
 
             skip_line(&here);
             continue;
