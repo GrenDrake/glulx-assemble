@@ -114,8 +114,7 @@ theBigString: .string "Hello world! I am a really good string!\n"
 ; in the string, but the file needs to be UTF-8 encoded. also, string will be
 ; automatically set to unicode or basic depending on their contents - this will
 ; be a unicode string because it contains unicode character
-;testUnicodeString: .string "Hello 常用漢字\n"
-testUnicodeString: .string "Hello [unicode data]\n"
+testUnicodeString: .unicode "Hello 常用漢字\n"
 ; create and label a four byte space; this is the required size to hold a memory
 ; address
 strloc: .zero 4
