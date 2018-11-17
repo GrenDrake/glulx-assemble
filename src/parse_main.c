@@ -966,7 +966,14 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
         has_errors = TRUE;
     }
 
-    write_word(out, output.info->string_table);
+    if (output.info->string_table == 0) {
+        write_word(out, 0);
+        if (output.info->strings.input_bytes > 0) {
+            report_error(&objectfile_origin, "source contains encoded strings but does not include .string_table directive");
+        }
+    } else {
+        write_word(out, output.info->string_table);
+    }
     write_word(out, 0); // checksum placeholder
     // gasm marker
     fputc('g', output.out);
