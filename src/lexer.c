@@ -98,12 +98,12 @@ struct token_list* lex_core(struct lexer_state *state) {
     tokens = init_token_list();
     int in = next_char(state);
     while (in != 0) {
-        if (in == '\r') {
-            in = next_char(state);
-        } else if (in == '\n') {
+        if (in == '\n' || in == '\r') {
             a_token = new_token(tt_eol, NULL, state);
             add_token(tokens, a_token);
-            in = next_char(state);
+            do {
+                in = next_char(state);
+            } while (in == '\n' || in == '\r');
         } else if (in == '\\') {
             in = next_char(state);
             if (in != '\n' && in != '\r') {
