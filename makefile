@@ -1,6 +1,6 @@
 OBJS=src/assemble.o src/lexer.o src/parse_core.o src/parse_main.o \
 	 src/parse_preprocess.o src/tokens.o src/labels.o src/opcodes.o \
-	 src/utility.o src/strings.o
+	 src/utility.o src/strings.o src/vbuffer.o
 TARGET=glulx-assemble
 
 CC=gcc

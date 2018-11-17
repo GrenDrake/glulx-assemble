@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "assemble.h"
+#include "vbuffer.h"
 
 #define TOKEN_BUF_LEN 2048
 
@@ -68,28 +69,23 @@ static int is_identifier(int ch) {
 
 struct token_list* lex_file(const char *filename) {
     struct lexer_state state = { { NULL, 1, 1 } };
+    struct vbuffer *buffer = vbuffer_new();
     state.origin.filename = str_dup(filename);
-    FILE *source_file = fopen(filename, "rb");
-    if (!source_file) {
-        report_error(NULL, "Could not open source file ~%s~.\n", filename);
-        return NULL;
-    }
-    fseek(source_file, 0, SEEK_END);
-    state.text_length = ftell(source_file);
-    fseek(source_file, 0, SEEK_SET);
-    state.text = malloc(state.text_length + 1);
-    if (!state.text) {
-        report_error(NULL, "Could not allocate memory for source file ~%s~.\n", filename);
-        return NULL;
-    }
-    fread(state.text, state.text_length, 1, source_file);
-    state.text[state.text_length] = 0;
-    fclose(source_file);
 
-    struct token_list *result = lex_core(&state);
+    int result = vbuffer_readfile(buffer, filename);
+    if (!result) {
+        report_error(NULL, "Could not open source file ~%s~.\n", filename);
+        vbuffer_free(buffer);
+        return NULL;
+    }
+    vbuffer_pushchar(buffer, '\0');
+
+    state.text = buffer->data;
+    state.text_length = buffer->length;
+    struct token_list *tokens = lex_core(&state);
     free_origin(&state.origin);
-    free(state.text);
-    return result;
+    vbuffer_free(buffer);
+    return tokens;
 }
 
 struct token_list* lex_core(struct lexer_state *state) {
