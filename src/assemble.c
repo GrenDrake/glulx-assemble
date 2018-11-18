@@ -116,7 +116,6 @@ int main(int argc, char *argv[]) {
         if (!info.debug_out) {
             info.debug_out = NULL;
             printf("could not open debug dump file\n");
-            return FALSE;
         }
     }
 
