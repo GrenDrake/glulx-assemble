@@ -19,6 +19,7 @@ static int start_function(struct token *first, struct output_state *output);
 static void end_function(struct output_state *output);
 
 struct operand* parse_operand(struct token **from, struct output_state *output);
+void free_operands(struct operand *first_operand);
 int operand_size(const struct operand *op);
 
 
@@ -193,7 +194,7 @@ static int data_bytes(struct token *first, struct output_state *output, int widt
                 write_variable(output->out, 0, width);
                 output->code_position += width;
             }
-            free(operand);
+            free_operands(operand);
         }
     }
     if (output->info->debug_out) {
@@ -360,6 +361,14 @@ struct operand* parse_operand(struct token **from, struct output_state *output) 
 
     *from = here->next;
     return op;
+}
+
+void free_operands(struct operand *first_operand) {
+    while (first_operand) {
+        struct operand *next = first_operand->next;
+        free(first_operand);
+        first_operand = next;
+    }
 }
 
 int operand_size(const struct operand *op) {
@@ -740,6 +749,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
             report_error(&mnemonic_start->origin,
                         "bad operand count for %s; expected %d, but found %d.",
                         m->name, m->operand_count, operand_count);
+            free_operands(op_list);
             has_errors = TRUE;
             skip_line(&here);
             continue;
@@ -879,11 +889,9 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
                     }
                 }
             }
-
-
-
             cur_op = cur_op->next;
         }
+        free_operands(op_list);
 
         if (output.info->debug_out) {
             fprintf(output.info->debug_out, "\n");
