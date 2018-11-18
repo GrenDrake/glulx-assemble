@@ -190,7 +190,10 @@ static int data_bytes(struct token *first, struct output_state *output, int widt
                     fprintf(output->info->debug_out, " %d", here->i);
                 }
                 if (!value_fits(operand->value, width)) {
-                    report_error(&op_start->origin, "(warning) value is larger than storage specification and will be truncated");
+                    report_error(&op_start->origin, "value is larger than storage specification");
+                    has_errors = TRUE;
+                    free_operands(operand);
+                    continue;
                 }
                 write_variable(output->out, operand->value, width);
                 output->code_position += width;
