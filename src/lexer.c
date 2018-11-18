@@ -211,6 +211,7 @@ struct token_list* lex_core(struct lexer_state *state) {
                 return NULL;
             } else if (strlen(text) == 0) {
                 report_error(&start.origin, "empty character literal");
+                free(text);
                 has_errors = TRUE;
             } else {
                 if (cleanup_string(text)) {
