@@ -7,43 +7,49 @@
 #include "assemble.h"
 #include "vbuffer.h"
 
+static void write_byte(FILE *out, uint8_t value);
+static void write_short(FILE *out, uint16_t value);
+static void write_word(FILE *out, uint32_t value);
+static void write_variable(FILE *out, uint32_t value, int width);
+
+static int value_fits(uint32_t value, int width);
 
 static int parse_string_data(struct token *first,
                              struct output_state *output,
                              int add_type_byte);
 static int parse_unicode_data(struct token *first,
                               struct output_state *output);
-static int data_zeroes(struct token *first, struct output_state *output);
-static int data_bytes(struct token *first, struct output_state *output, int width);
+static int parse_zeroes(struct token *first, struct output_state *output);
+static int parse_bytes(struct token *first, struct output_state *output, int width);
 static int start_function(struct token *first, struct output_state *output);
 static void end_function(struct output_state *output);
 
 struct operand* parse_operand(struct token **from, struct output_state *output);
-void free_operands(struct operand *first_operand);
-int operand_size(const struct operand *op);
+static void free_operands(struct operand *first_operand);
+static int operand_size(const struct operand *op);
 
 
 /* ************************************************************************** *
  * BINARY OUTPUT FUNCTIONS                                                    *
  * ************************************************************************** */
 
-void write_byte(FILE *out, uint8_t value) {
+static void write_byte(FILE *out, uint8_t value) {
     fputc(  value        & 0xFF, out);
 }
 
-void write_short(FILE *out, uint16_t value) {
+static void write_short(FILE *out, uint16_t value) {
     fputc( (value >> 8)  & 0xFF, out);
     fputc(  value        & 0xFF, out);
 }
 
-void write_word(FILE *out, uint32_t value) {
+static void write_word(FILE *out, uint32_t value) {
     fputc( (value >> 24) & 0xFF, out);
     fputc( (value >> 16) & 0xFF, out);
     fputc( (value >> 8)  & 0xFF, out);
     fputc(  value        & 0xFF, out);
 }
 
-void write_variable(FILE *out, uint32_t value, int width) {
+static void write_variable(FILE *out, uint32_t value, int width) {
     switch(width) {
         case 1:
             write_byte(out, value);
@@ -57,7 +63,7 @@ void write_variable(FILE *out, uint32_t value, int width) {
     }
 }
 
-int value_fits(uint32_t value, int width) {
+static int value_fits(uint32_t value, int width) {
     switch(width) {
         case 1:
             return value == (value & 0xFF);
@@ -142,7 +148,7 @@ static int parse_unicode_data(struct token *first,
     return TRUE;
 }
 
-static int data_zeroes(struct token *first, struct output_state *output) {
+static int parse_zeroes(struct token *first, struct output_state *output) {
     struct token *here = first->next;
 
     if (here->type != tt_integer) {
@@ -161,7 +167,7 @@ static int data_zeroes(struct token *first, struct output_state *output) {
     return TRUE;
 }
 
-static int data_bytes(struct token *first, struct output_state *output, int width) {
+static int parse_bytes(struct token *first, struct output_state *output, int width) {
     int has_errors = FALSE;
     struct token *here = first->next;
     if (output->info->debug_out) {
@@ -380,7 +386,7 @@ struct operand* parse_operand(struct token **from, struct output_state *output) 
     return op;
 }
 
-void free_operands(struct operand *first_operand) {
+static void free_operands(struct operand *first_operand) {
     while (first_operand) {
         struct operand *next = first_operand->next;
         free(first_operand);
@@ -388,7 +394,7 @@ void free_operands(struct operand *first_operand) {
     }
 }
 
-int operand_size(const struct operand *op) {
+static int operand_size(const struct operand *op) {
     if (!op->known_value || op->force_4byte) {
         return 3;
     }
@@ -497,28 +503,28 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
         }
 
         if (strcmp(here->text, ".byte") == 0) {
-            if (!data_bytes(here, &output, 1)) {
+            if (!parse_bytes(here, &output, 1)) {
                 has_errors = TRUE;
             }
             skip_line(&here);
             continue;
         }
         if (strcmp(here->text, ".short") == 0) {
-            if (!data_bytes(here, &output, 2)) {
+            if (!parse_bytes(here, &output, 2)) {
                 has_errors = TRUE;
             }
             skip_line(&here);
             continue;
         }
         if (strcmp(here->text, ".word") == 0) {
-            if (!data_bytes(here, &output, 4)) {
+            if (!parse_bytes(here, &output, 4)) {
                 has_errors = TRUE;
             }
             skip_line(&here);
             continue;
         }
         if (strcmp(here->text, ".zero") == 0) {
-            if (!data_zeroes(here, &output)) {
+            if (!parse_zeroes(here, &output)) {
                 has_errors = TRUE;
             }
             skip_line(&here);
