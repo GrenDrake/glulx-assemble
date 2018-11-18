@@ -21,7 +21,7 @@ static int parse_unicode_data(struct token *first,
                               struct output_state *output);
 static int parse_zeroes(struct token *first, struct output_state *output);
 static int parse_bytes(struct token *first, struct output_state *output, int width);
-static int start_function(struct token *first, struct output_state *output);
+static int parse_function(struct token *first, struct output_state *output);
 static void free_function_locals(struct output_state *output);
 
 struct operand* parse_operand(struct token **from, struct output_state *output);
@@ -226,7 +226,7 @@ static int parse_bytes(struct token *first, struct output_state *output, int wid
     return !has_errors;
 }
 
-static int start_function(struct token *first, struct output_state *output) {
+static int parse_function(struct token *first, struct output_state *output) {
     int stack_based = FALSE;
     int found_errors = FALSE;
     struct token *here = first->next; // skip ".function"
@@ -532,7 +532,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
         }
 
         if (strcmp(here->text, ".function") == 0) {
-            if (!start_function(here, &output)) {
+            if (!parse_function(here, &output)) {
                 has_errors = TRUE;
             }
             skip_line(&here);
