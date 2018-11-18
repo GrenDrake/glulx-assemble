@@ -162,6 +162,7 @@ static int data_zeroes(struct token *first, struct output_state *output) {
 }
 
 static int data_bytes(struct token *first, struct output_state *output, int width) {
+    int has_errors = FALSE;
     struct token *here = first->next;
     if (output->info->debug_out) {
         fprintf(output->info->debug_out, "0x%08X data(%d)", output->code_position, width);
@@ -171,6 +172,19 @@ static int data_bytes(struct token *first, struct output_state *output, int widt
         struct token *op_start = here;
         struct operand *operand = parse_operand(&here, output);
         if (operand) {
+            if (operand->type == ot_local) {
+                report_error(&op_start->origin, "local variables cannot be used in data directive");
+                free_operands(operand);
+                has_errors = TRUE;
+                continue;
+            }
+            if (operand->type != ot_constant) {
+                report_error(&op_start->origin, "operand modes cannot be used in data directive");
+                free_operands(operand);
+                has_errors = TRUE;
+                continue;
+            }
+
             if (operand->known_value) {
                 if (output->info->debug_out) {
                     fprintf(output->info->debug_out, " %d", here->i);
@@ -200,7 +214,7 @@ static int data_bytes(struct token *first, struct output_state *output, int widt
     if (output->info->debug_out) {
         fprintf(output->info->debug_out, "\n");
     }
-    return TRUE;
+    return !has_errors;
 }
 
 static int start_function(struct token *first, struct output_state *output) {
