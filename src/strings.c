@@ -5,6 +5,25 @@
 
 #include "assemble.h"
 
+void free_string_table(struct string_table *table) {
+    for (int i = 0; i < STRING_TABLE_BUCKETS; ++i) {
+        struct string_table_entry *entry = table->buckets[i];
+        while (entry) {
+            struct string_table_entry *next = entry->next;
+            free(entry);
+            entry = next;
+        }
+        table->buckets[i] = NULL;
+    }
+
+    struct string_node *node = table->first;
+    while (node) {
+        struct string_node *next = node->next;
+        free(node);
+        node = next;
+    }
+}
+
 void string_table_add(struct string_table *table, unsigned c) {
     unsigned hash = c % STRING_TABLE_BUCKETS;
     struct string_table_entry *entry;

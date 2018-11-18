@@ -178,6 +178,7 @@ void copy_origin(struct origin *dest, struct origin *src);
 void copy_origin(struct origin *dest, struct origin *src);
 void free_origin(struct origin *origin);
 
+void free_string_table(struct string_table *table);
 void string_table_add(struct string_table *table, unsigned c);
 void string_add_to_frequencies(struct string_table *table, const char *string);
 int node_list_size(struct string_node *node);

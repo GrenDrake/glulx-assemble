@@ -124,6 +124,7 @@ int main(int argc, char *argv[]) {
         if (remove(info.output_file) != 0) {
             perror("Could not remove failed build file");
         }
+        free_string_table(&info.strings);
         free_patches(info.patch_list);
         free_labels(info.first_label);
         free_token_list(tokens);
@@ -152,6 +153,7 @@ int main(int argc, char *argv[]) {
                 info.strings.output_bytes);
     }
 
+    free_string_table(&info.strings);
     free_patches(info.patch_list);
     free_labels(info.first_label);
     free_token_list(tokens);
