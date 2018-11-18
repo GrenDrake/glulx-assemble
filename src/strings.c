@@ -216,50 +216,6 @@ int encode_string(FILE *out, struct string_table *table, const char *text) {
             return size;
         }
     }
-/*
-
-std::vector<bool> HuffmanTable::encode(const std::string &text) const {
-	std::vector<bool> result;
-	std::string::const_iterator iter = text.begin();
-
-	while (true) {
-		int c = 0;
-		if (iter != text.end()) {
-			c = utf8::next(iter, text.end());
-		}
-
-		HuffmanNode *node = root;
-		while (node->getType() == HuffmanNode::Branch) {
-			HuffmanBranch *branch = dynamic_cast<HuffmanBranch*>(node);
-			if (!branch) {
-				return result;
-			}
-
-			if (branch->getLeft()->contains(c)) {
-				node = branch->getLeft();
-				result.push_back(false);
-			} else if (branch->getRight()->contains(c)) {
-				node = branch->getRight();
-				result.push_back(true);
-			} else {
-				std::stringstream ss;
-				ss << "Character ";
-				if (c >= 0x20 && c != 0x7F) {
-					ss << '\'' << static_cast<char>(c) << "' (" << std::hex << "0x" << c << ") ";
-				} else {
-					ss << std::hex << "0x" << c << ' ';
-				}
-				ss << "Not in Huffman Table";
-				throw HuffmanException(ss.str());
-			}
-		}
-
-		if (c == 0) {
-			return result;
-		}
-	}
-}
-*/
 }
 
 void dump_string_frequencies(FILE *dest, struct string_table *table) {
