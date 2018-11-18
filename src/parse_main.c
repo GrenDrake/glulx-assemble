@@ -22,7 +22,7 @@ static int parse_unicode_data(struct token *first,
 static int parse_zeroes(struct token *first, struct output_state *output);
 static int parse_bytes(struct token *first, struct output_state *output, int width);
 static int start_function(struct token *first, struct output_state *output);
-static void end_function(struct output_state *output);
+static void free_function_locals(struct output_state *output);
 
 struct operand* parse_operand(struct token **from, struct output_state *output);
 static void free_operands(struct operand *first_operand);
@@ -230,7 +230,7 @@ static int start_function(struct token *first, struct output_state *output) {
     int stack_based = FALSE;
     int found_errors = FALSE;
     struct token *here = first->next; // skip ".function"
-    end_function(output);
+    free_function_locals(output);
     int start_pos = output->code_position;
 
     if (here && here->type == tt_identifier && strcmp(here->text, "stk") == 0) {
@@ -309,7 +309,7 @@ static int start_function(struct token *first, struct output_state *output) {
     return !found_errors;
 }
 
-static void end_function(struct output_state *output) {
+static void free_function_locals(struct output_state *output) {
     struct local_list *cur = output->local_names;
     while (cur) {
         struct local_list *next = cur->next;
@@ -922,6 +922,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
         skip_line(&here);
         continue;
     }
+    free_function_locals(&output);
 
 
     struct origin objectfile_origin = { (char*)info->output_file, -1 };
