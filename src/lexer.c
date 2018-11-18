@@ -200,6 +200,7 @@ struct token_list* lex_core(struct lexer_state *state) {
                     has_errors = 1;
                 }
                 a_token = new_token(tt_string, text, &start);
+                free(text);
                 add_token(tokens, a_token);
             }
         } else if (in == '\'') {
