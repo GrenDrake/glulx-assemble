@@ -195,8 +195,9 @@ struct token_list* lex_core(struct lexer_state *state) {
                 has_errors = TRUE;
                 return NULL;
             } else {
-                if (cleanup_string(text)) {
-                    report_error(&start.origin, "bad string escape");
+                int bad_escape = cleanup_string(text);
+                if (bad_escape) {
+                    report_error(&start.origin, "string contains invalid escape code '\\%c'", text[bad_escape]);
                     has_errors = 1;
                 }
                 a_token = new_token(tt_string, text, &start);
@@ -215,8 +216,9 @@ struct token_list* lex_core(struct lexer_state *state) {
                 free(text);
                 has_errors = TRUE;
             } else {
-                if (cleanup_string(text)) {
-                    report_error(&start.origin, "bad string escape");
+                int bad_escape = cleanup_string(text);
+                if (bad_escape) {
+                    report_error(&start.origin, "character literal contains invalid escape code '\\%c'", text[bad_escape]);
                     has_errors = 1;
                 }
                 int text_pos = 0;
