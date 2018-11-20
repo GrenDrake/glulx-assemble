@@ -114,12 +114,12 @@ directionTable:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 player_name:      .encoded "(player)"
 player_desc:      .encoded "You look the same as always."
+player_vocab:     .word meWord playerWord 0
 player:
 .word player_name player_desc               ; name  direction
 .word 0 0 0 0                               ; north east south west
 .word 0 0 0                                 ; parent child sibling
-.word OF_CONCEAL                            ; object flags
-.word meWord playerWord 0                   ; vocab words
+.word OF_CONCEAL player_vocab               ; flags vocab
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -311,10 +311,10 @@ strcmp: .function       left right      pos left_c right_c
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-wordInVocab: .function      forObject wordAddr      wordNo vocabWord
-        copy OBJ_VOCAB wordNo
+wordInVocab: .function      forObject wordAddr      vocabList wordNo vocabWord
+        aload forObject OBJ_VOCAB vocabList
     wordInVocab_loop:
-        aload forObject wordNo vocabWord
+        aload vocabList wordNo vocabWord
         jz vocabWord wordInVocab_no
         callfii strcmp wordAddr vocabWord sp
         jz sp wordInVocab_yes
