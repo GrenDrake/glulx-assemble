@@ -484,7 +484,7 @@ start: .function 3
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-droppedString:          .encoded "Taken.\n";
+droppedString:          .encoded "Dropped.\n";
 notHoldingThatString:   .encoded "You aren't holding that.\n"
 verbDrop: .function     target
         callfii objectForVocab *secondWord player target
