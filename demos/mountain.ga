@@ -26,7 +26,7 @@ loc_mainHall:
 .word loc_mainHall_name loc_mainHall_desc   ; name  direction
 .word 0 0 loc_entryHall 0                   ; north east south west
 .word 0 obj_table 0                         ; parent child sibling
-.word 0                                     ; flags vocab
+.word 0 0                                   ; flags vocab
 
 obj_table_name:         .encoded "table"
 obj_table_desc:         .encoded "An ancient wooden table. Though it has survived a long time, signs of rot are clearly visible."
