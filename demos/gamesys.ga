@@ -48,6 +48,7 @@ event:                  .zero 16
 commandbuf:             .zero 256
 firstWord:              .zero 4
 secondWord:             .zero 4
+theNoun:                .zero 4
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -472,6 +473,7 @@ start: .function 3
         jump start_mainLoopBegin
 
     start_foundVerb:
+        copy 0 *theNoun
         aload #0 2 #1
         jeq #1 VERB_EITHER start_commandGood
         jeq #1 VERB_ONEWORD start_oneWordCommand
@@ -484,6 +486,10 @@ start: .function 3
         jump start_mainLoopBegin
 
     start_commandGood:
+        jz *secondWord start_skipFindNoun
+        callfii objectForVocab *secondWord *location *theNoun
+        jz *theNoun start_skipFindNoun
+    start_skipFindNoun:
         aload #0 1 sp
         callf sp 0
         jump start_mainLoopBegin
@@ -493,11 +499,12 @@ start: .function 3
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 droppedString:          .encoded "Dropped.\n";
 notHoldingThatString:   .encoded "You aren't holding that.\n"
-verbDrop: .function     target
-        callfii objectForVocab *secondWord player target
-        jz target verbDrop_notHolding
+verbDrop: .function
+        jz *theNoun verbDrop_notHolding
+        callfii objectContains player *theNoun sp
+        jz sp verbDrop_notHolding
         aload player OBJ_PARENT sp
-        callfii objectMove target *location 0
+        callfii objectMove *theNoun *location 0
         streamstr droppedString
         return 0
     verbDrop_notHolding:
@@ -554,14 +561,13 @@ verbInventory: .function        curChild
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 cantSeeThatString:  .encoded "You can't see that here.\n"
-verbLook: .function     target
+verbLook: .function
         jnz *secondWord verbLook_at
         callf verbLookAround 0
         return 0;
     verbLook_at:
-        callfii objectForVocab *secondWord *location target
-        jz target verbLook_cantSee
-        aload target OBJ_DESC sp
+        jz *theNoun verbLook_cantSee
+        aload *theNoun OBJ_DESC sp
         streamstr sp
         streamchar 10
         return 0
@@ -605,17 +611,22 @@ verbQuit: .function
         return 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-takenString:        .encoded "Taken.\n";
-cantTakeSelfString: .encoded "Can't take yourself.\n"
-cantTakeThatString: .encoded "Can't take that.\n"
-verbTake: .function     target
-        callfii objectForVocab *secondWord *location target
-        jz target verbTake_cantSee
-        jeq target player verbTake_cantTakeSelf
-        callfii objectHasFlag target OF_STATIC sp
+takenString:                .encoded "Taken.\n";
+cantTakeSelfString:         .encoded "Can't take yourself.\n"
+cantTakeThatString:         .encoded "Can't take that.\n"
+alreadyHoldingThatString:   .encoded "Already holding that.\n"
+verbTake: .function
+        jz *theNoun verbTake_cantSee
+        jeq *theNoun player verbTake_cantTakeSelf
+        callfii objectHasFlag *theNoun OF_STATIC sp
         jnz sp verbTake_cantTakeThat
-        callfii objectMove target player 0
+        callfii objectContains player *theNoun sp
+        jnz sp verbTake_alreadyHolding
+        callfii objectMove *theNoun player 0
         streamstr takenString
+        return 0
+    verbTake_alreadyHolding:
+        streamstr alreadyHoldingThatString
         return 0
     verbTake_cantTakeThat:
         streamstr cantTakeThatString
