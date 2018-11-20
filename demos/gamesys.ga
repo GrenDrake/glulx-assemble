@@ -185,16 +185,23 @@ objectContains: .function       forParent maybeChild        curChild
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-objectForVocab: .function       vocabWord fromScope       curChild
+objectForVocab: .function       vocabWord fromScope       curChild subChild
     objectForVocab_at:
         callfi getChild fromScope curChild
     objectForVocab_atLoop:
         jz curChild objectForVocab_cantSee
         callfii wordInVocab curChild vocabWord sp
         jnz sp objectForVocab_found
+        aload curChild OBJ_CHILD sp
+        jz sp objectForVocab_noSubChild
+        callfii objectForVocab vocabWord curChild subChild
+        jnz subChild objectForVocab_foundSubChild
+    objectForVocab_noSubChild:
         callfi getSibling curChild curChild
         jump objectForVocab_atLoop
 
+    objectForVocab_foundSubChild:
+        return subChild
     objectForVocab_found:
         return curChild
     objectForVocab_cantSee:
