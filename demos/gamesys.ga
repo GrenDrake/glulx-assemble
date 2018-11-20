@@ -38,6 +38,7 @@
 .define OBJ_SIBLING 8
 .define OBJ_FLAGS   9
 .define OBJ_VOCAB   10
+.define OBJ_BEFORE  11
 
 .define OF_STATIC   1
 .define OF_CONCEAL  2
@@ -120,7 +121,7 @@ player:
 .word player_name player_desc               ; name  direction
 .word 0 0 0 0                               ; north east south west
 .word 0 0 0                                 ; parent child sibling
-.word OF_CONCEAL player_vocab               ; flags vocab
+.word OF_CONCEAL player_vocab 0             ; flags vocab before
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -486,12 +487,25 @@ start: .function 3
         jump start_mainLoopBegin
 
     start_commandGood:
+        aload #0 1 #0
         jz *secondWord start_skipFindNoun
         callfii objectForVocab *secondWord *location *theNoun
         jz *theNoun start_skipFindNoun
+        aload *theNoun OBJ_BEFORE #2
+        jz #2 start_skipFindNoun
+    start_findBeforeLoop:
+        aload #2 0 #1
+        jz #1 start_skipFindNoun
+        jeq #1 #0 start_runBefore
+        add #2 8 #2
+        jump start_findBeforeLoop
+
+    start_runBefore:
+        aload #2 1 #1
+        callf #1 sp
+        jnz sp start_mainLoopBegin
     start_skipFindNoun:
-        aload #0 1 sp
-        callf sp 0
+        callf #0 0
         jump start_mainLoopBegin
 
 
