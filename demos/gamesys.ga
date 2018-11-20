@@ -171,6 +171,20 @@ getUnconcealedSibling: .function       forObject        curChild
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+objectContains: .function       forParent maybeChild        curChild
+        aload forParent OBJ_CHILD curChild
+    objectContains_loop:
+        jz curChild objectContains_no
+        jeq curChild maybeChild objectContains_yes
+        aload curChild OBJ_SIBLING curChild
+        jump objectContains_loop
+    objectContains_yes:
+        return TRUE
+    objectContains_no:
+        return FALSE
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 objectForVocab: .function       vocabWord fromScope       curChild
     objectForVocab_at:
         callfi getChild fromScope curChild
