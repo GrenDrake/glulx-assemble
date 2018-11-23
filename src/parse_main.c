@@ -24,6 +24,7 @@ static int parse_bytes(struct token *first, struct output_state *output, int wid
 static int parse_function(struct token *first, struct output_state *output);
 static void free_function_locals(struct output_state *output);
 
+struct operand* parse_operand_constant(struct token **from, struct output_state *output, int require_known);
 struct operand* parse_operand(struct token **from, struct output_state *output);
 static void free_operands(struct operand *first_operand);
 static int operand_size(const struct operand *op);
@@ -173,21 +174,8 @@ static int parse_bytes(struct token *first, struct output_state *output, int wid
 
     while (here && here->type != tt_eol) {
         struct token *op_start = here;
-        struct operand *operand = parse_operand(&here, output);
+        struct operand *operand = parse_operand_constant(&here, output, FALSE);
         if (operand) {
-            if (operand->type == ot_local) {
-                report_error(&op_start->origin, "local variables cannot be used in data directive");
-                free_operands(operand);
-                has_errors = TRUE;
-                continue;
-            }
-            if (operand->type != ot_constant) {
-                report_error(&op_start->origin, "operand modes cannot be used in data directive");
-                free_operands(operand);
-                has_errors = TRUE;
-                continue;
-            }
-
             if (operand->known_value) {
                 if (output->info->debug_out) {
                     fprintf(output->info->debug_out, " %d", here->i);
@@ -318,6 +306,23 @@ static void free_function_locals(struct output_state *output) {
     output->local_count = 0;
 }
 
+struct operand* parse_operand_constant(struct token **from, struct output_state *output, int require_known) {
+    struct token *start = *from;
+    struct operand *op = parse_operand(from, output);
+    if (!op) return NULL;
+    if (op->type != ot_constant) {
+        report_error(&start->origin, "value must be constant");
+        free_operands(op);
+        return FALSE;
+    }
+    if (require_known && !op->known_value) {
+        report_error(&start->origin, "value must be previously defined");
+        free_operands(op);
+        return FALSE;
+    }
+    return op;
+}
+
 
 struct operand* parse_operand(struct token **from, struct output_state *output) {
     struct token *here = *from;
@@ -431,19 +436,8 @@ int parse_directives(struct token *here, struct output_state *output) {
             return FALSE;
         }
 
-        struct operand *operand = parse_operand(&here, output);
+        struct operand *operand = parse_operand_constant(&here, output, TRUE);
         if (operand) {
-            if (operand->type != ot_constant) {
-                report_error(&here->origin, ".define value must be constant");
-                free_operands(operand);
-                return FALSE;
-            }
-            if (!operand->known_value) {
-                report_error(&here->origin, ".define value must be previously defined");
-                free_operands(operand);
-                return FALSE;
-            }
-
             if (!add_label(&output->info->first_label, name, operand->value)) {
                 report_error(&here->origin, "error creating constant");
                 free_operands(operand);
