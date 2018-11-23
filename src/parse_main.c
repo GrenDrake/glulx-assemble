@@ -684,9 +684,10 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
             here = here->next;
             if (matches_text(here, tt_identifier, "rel")) {
                 here = here->next;
-                customCode.last_operand_is_relative= TRUE;
+                customCode.last_operand_is_relative = TRUE;
             }
-            if (!expect_type(here, tt_integer)) {
+            struct operand *operand = parse_operand_constant(&here, &output, TRUE);
+            if (!operand) {
                 customCode.opcode = 0;
                 has_errors = TRUE;
             } else {
@@ -724,7 +725,9 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
             output.code_position += 4;
         }
 
-        here = here->next;
+        if (m != &customCode) {
+            here = here->next;
+        }
         int operand_count = 0, operand_error = FALSE;
         struct operand *op_list = NULL, *op_end = NULL;
         while (here && here->type != tt_eol && !operand_error) {
