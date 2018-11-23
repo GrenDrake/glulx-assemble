@@ -419,6 +419,186 @@ static int operand_size(const struct operand *op) {
 
 
 /* ************************************************************************** *
+ * DIRECTIVE PROCESSING                                                       *
+ * ************************************************************************** */
+int parse_directives(struct token *here, struct output_state *output) {
+    if (strcmp(here->text, ".cstring") == 0) {
+        return parse_string_data(here, output, FALSE);
+    }
+
+    if (strcmp(here->text, ".string") == 0) {
+        return parse_string_data(here, output, TRUE);
+    }
+
+    if (strcmp(here->text, ".unicode") == 0) {
+        return parse_unicode_data(here, output);
+    }
+
+    if (strcmp(here->text, ".encoded") == 0) {
+        here = here->next;
+        if (here->type != tt_string) {
+            report_error(&here->origin, "Expected string");
+            return FALSE;
+        }
+        int size = encode_string(output->out, &output->info->strings, here->text);
+        if (size < 0) return FALSE;
+        output->code_position += size;
+        return TRUE;
+    }
+
+    if (strcmp(here->text, ".byte") == 0) {
+        return parse_bytes(here, output, 1);
+    }
+    if (strcmp(here->text, ".short") == 0) {
+        return parse_bytes(here, output, 2);
+    }
+    if (strcmp(here->text, ".word") == 0) {
+        return parse_bytes(here, output, 4);
+    }
+
+    if (strcmp(here->text, ".zero") == 0) {
+        return parse_zeroes(here, output);
+    }
+
+    if (strcmp(here->text, ".function") == 0) {
+        return parse_function(here, output);
+    }
+
+    if (strcmp(here->text, ".end_header") == 0) {
+        if (!output->in_header) {
+            report_error(&here->origin, "ended header when not in header");
+            return FALSE;
+        }
+
+        while (output->code_position % 256 != 0) {
+            fputc(0, output->out);
+            ++output->code_position;
+        }
+        output->in_header = FALSE;
+        output->info->ram_start = output->code_position;
+        add_label(&output->info->first_label, "_RAMSTART", output->info->ram_start);
+        return TRUE;
+    }
+
+    if (strcmp(here->text, ".extra_memory") == 0) {
+        here = here->next;
+        if (here->type != tt_integer) {
+            report_error(&here->origin, "expected integer, found %s", token_name(here));
+            return FALSE;
+        }
+        if (here->i % 256) {
+            report_error(&here->origin, "extra memory must be multiple of 256 (currently %d, next multiple %d)",
+                        here->i,
+                        (here->i / 256 + 1) * 256);
+            return FALSE;
+        }
+        output->info->extended_memory = here->i;
+        return TRUE;
+    }
+
+    if (strcmp(here->text, ".stack_size") == 0) {
+        here = here->next;
+        if (here->type != tt_integer) {
+            report_error(&here->origin, "expected integer, found %s", token_name(here));
+            return FALSE;
+        }
+        if (here->i % 256) {
+            report_error(&here->origin, "stack size must be multiple of 256 (currently %d, next multiple %d)",
+                        here->i,
+                        (here->i / 256 + 1) * 256);
+            return FALSE;
+        }
+        output->info->stack_size = here->i;
+        return TRUE;
+    }
+
+    if (strcmp(here->text, ".include") == 0
+        || strcmp(here->text, ".define") == 0) {
+        report_error(&here->origin,
+                    "(internal) encountered %s directive after pre-processing",
+                    here->text);
+        return FALSE;
+    }
+
+    if (strcmp(here->text, ".include_binary") == 0) {
+        here = here->next;
+        if (here->type != tt_string) {
+            report_error(&here->origin, "expected string, found %s", token_name(here));
+            return FALSE;
+        }
+
+        struct vbuffer *buffer = vbuffer_new();
+        int result = vbuffer_readfile(buffer, here->text);
+        if (!result) {
+            report_error(&here->origin, "Could not read binary file ~%s~.", here->text);
+            vbuffer_free(buffer);
+            return FALSE;
+        }
+        fwrite(buffer->data, buffer->length, 1, output->out);
+
+        if (output->info->debug_out) {
+            fprintf(output->info->debug_out, "0x%08X BINARY FILE ~%s~ (%d bytes)\n",
+                    output->code_position,
+                    here->text,
+                    buffer->length);
+        }
+
+        vbuffer_free(buffer);
+        output->code_position += buffer->length;
+        return TRUE;
+    }
+
+    if (strcmp(here->text, ".string_table") == 0) {
+        if (output->info->strings.first == NULL) {
+            return TRUE;
+        }
+
+        output->info->string_table = output->code_position;
+        int table_start = output->code_position + 12;
+
+        int table_size = 12;
+        struct string_node *node = output->info->strings.first;
+        while (node) {
+            table_size += node_size(node);
+            node = node->next;
+        }
+
+        write_word(output->out, table_size); // table size (bytes)
+        write_word(output->out, node_list_size(output->info->strings.first)); // table size (nodes)
+        write_word(output->out, output->info->strings.root->position + table_start); // root node
+        output->code_position += 12;
+
+        node = output->info->strings.first;
+        while (node) {
+            switch(node->type) {
+                case nt_end:
+                    write_byte(output->out, 1);
+                    break;
+                case nt_branch:
+                    write_byte(output->out, 0);
+                    write_word(output->out, node->d.branch.left->position + table_start);
+                    write_word(output->out, node->d.branch.right->position + table_start);
+                    break;
+                case nt_char:
+                    write_byte(output->out, 2);
+                    write_byte(output->out, node->d.a_char.c);
+                    break;
+                case nt_unichar:
+                    write_byte(output->out, 4);
+                    write_word(output->out, node->d.a_char.c);
+                    break;
+            }
+            output->code_position += node_size(node);
+            node = node->next;
+        }
+        return TRUE;
+    }
+
+    report_error(&here->origin, "unknown directive %s", here->text);
+    return FALSE;
+}
+
+/* ************************************************************************** *
  * PARSE_TOKENS FUNCTION                                                      *
  * ************************************************************************** */
 int parse_tokens(struct token_list *list, struct program_info *info) {
@@ -461,237 +641,11 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
             continue;
         }
 
-/* ************************************************************************** *
- * DIRECTIVE PROCESSING                                                       *
- * ************************************************************************** */
-        if (strcmp(here->text, ".cstring") == 0) {
-            if (!parse_string_data(here, &output, FALSE)) {
-                has_errors = TRUE;
-            }
-            skip_line(&here);
-            continue;
-        }
-
-        if (strcmp(here->text, ".string") == 0) {
-            if (!parse_string_data(here, &output, TRUE)) {
-                has_errors = TRUE;
-            }
-            skip_line(&here);
-            continue;
-        }
-
-        if (strcmp(here->text, ".unicode") == 0) {
-            if (!parse_unicode_data(here, &output)) {
-                has_errors = TRUE;
-            }
-            skip_line(&here);
-            continue;
-        }
-
-        if (strcmp(here->text, ".encoded") == 0) {
-            here = here->next;
-            if (here->type != tt_string) {
-                report_error(&here->origin, "Expected string");
-                skip_line(&here);
-                continue;
-            }
-            int size = encode_string(output.out, &output.info->strings, here->text);
-            if (size < 0) has_errors = TRUE;
-            output.code_position += size;
-            skip_line(&here);
-            continue;
-        }
-
-        if (strcmp(here->text, ".byte") == 0) {
-            if (!parse_bytes(here, &output, 1)) {
-                has_errors = TRUE;
-            }
-            skip_line(&here);
-            continue;
-        }
-        if (strcmp(here->text, ".short") == 0) {
-            if (!parse_bytes(here, &output, 2)) {
-                has_errors = TRUE;
-            }
-            skip_line(&here);
-            continue;
-        }
-        if (strcmp(here->text, ".word") == 0) {
-            if (!parse_bytes(here, &output, 4)) {
-                has_errors = TRUE;
-            }
-            skip_line(&here);
-            continue;
-        }
-        if (strcmp(here->text, ".zero") == 0) {
-            if (!parse_zeroes(here, &output)) {
-                has_errors = TRUE;
-            }
-            skip_line(&here);
-            continue;
-        }
-
-        if (strcmp(here->text, ".function") == 0) {
-            if (!parse_function(here, &output)) {
-                has_errors = TRUE;
-            }
-            skip_line(&here);
-            continue;
-        }
-
-        if (strcmp(here->text, ".end_header") == 0) {
-            if (!output.in_header) {
-                report_error(&here->origin, "ended header when not in header");
-                has_errors = TRUE;
-                skip_line(&here);
-                continue;
-            }
-
-            while (output.code_position % 256 != 0) {
-                fputc(0, output.out);
-                ++output.code_position;
-            }
-            output.in_header = FALSE;
-            output.info->ram_start = output.code_position;
-            add_label(&output.info->first_label, "_RAMSTART", output.info->ram_start);
-            skip_line(&here);
-            continue;
-        }
-
-        if (strcmp(here->text, ".extra_memory") == 0) {
-            here = here->next;
-            if (here->type != tt_integer) {
-                report_error(&here->origin, "expected integer, found %s", token_name(here));
-                has_errors = TRUE;
-                skip_line(&here);
-                continue;
-            }
-            if (here->i % 256) {
-                report_error(&here->origin, "extra memory must be multiple of 256 (currently %d, next multiple %d)",
-                            here->i,
-                            (here->i / 256 + 1) * 256);
-                has_errors = TRUE;
-            }
-            output.info->extended_memory = here->i;
-            skip_line(&here);
-            continue;
-        }
-
-        if (strcmp(here->text, ".stack_size") == 0) {
-            here = here->next;
-            if (here->type != tt_integer) {
-                report_error(&here->origin, "expected integer, found %s", token_name(here));
-                has_errors = TRUE;
-                skip_line(&here);
-                continue;
-            }
-            if (here->i % 256) {
-                report_error(&here->origin, "stack size must be multiple of 256 (currently %d, next multiple %d)",
-                            here->i,
-                            (here->i / 256 + 1) * 256);
-                has_errors = TRUE;
-            }
-            output.info->stack_size = here->i;
-            skip_line(&here);
-            continue;
-        }
-
-        if (strcmp(here->text, ".include") == 0
-            || strcmp(here->text, ".define") == 0) {
-            report_error(&here->origin,
-                        "(internal) encountered %s directive after pre-processing",
-                        here->text);
-            has_errors = TRUE;
-            skip_line(&here);
-            continue;
-        }
-
-        if (strcmp(here->text, ".include_binary") == 0) {
-            here = here->next;
-            if (here->type != tt_string) {
-                report_error(&here->origin, "expected string, found %s", token_name(here));
-                has_errors = TRUE;
-                skip_line(&here);
-                continue;
-            }
-
-            struct vbuffer *buffer = vbuffer_new();
-            int result = vbuffer_readfile(buffer, here->text);
-            if (!result) {
-                report_error(&here->origin, "Could not read binary file ~%s~.", here->text);
-                has_errors = TRUE;
-                skip_line(&here);
-                vbuffer_free(buffer);
-                continue;
-            }
-            fwrite(buffer->data, buffer->length, 1, out);
-
-            if (output.info->debug_out) {
-                fprintf(output.info->debug_out, "0x%08X BINARY FILE ~%s~ (%d bytes)\n",
-                        output.code_position,
-                        here->text,
-                        buffer->length);
-            }
-
-            vbuffer_free(buffer);
-            output.code_position += buffer->length;
-
-            skip_line(&here);
-            continue;
-        }
-
-        if (strcmp(here->text, ".string_table") == 0) {
-            if (output.info->strings.first == NULL) {
-                // skip empty string tables
-                skip_line(&here);
-                continue;
-            }
-
-            output.info->string_table = output.code_position;
-            int table_start = output.code_position + 12;
-
-            int table_size = 12;
-            struct string_node *node = info->strings.first;
-            while (node) {
-                table_size += node_size(node);
-                node = node->next;
-            }
-
-            write_word(output.out, table_size); // table size (bytes)
-            write_word(output.out, node_list_size(info->strings.first)); // table size (nodes)
-            write_word(output.out, info->strings.root->position + table_start); // root node
-            output.code_position += 12;
-
-            node = info->strings.first;
-            while (node) {
-                switch(node->type) {
-                    case nt_end:
-                        write_byte(output.out, 1);
-                        break;
-                    case nt_branch:
-                        write_byte(output.out, 0);
-                        write_word(output.out, node->d.branch.left->position + table_start);
-                        write_word(output.out, node->d.branch.right->position + table_start);
-                        break;
-                    case nt_char:
-                        write_byte(output.out, 2);
-                        write_byte(output.out, node->d.a_char.c);
-                        break;
-                    case nt_unichar:
-                        write_byte(output.out, 4);
-                        write_word(output.out, node->d.a_char.c);
-                        break;
-                }
-                output.code_position += node_size(node);
-                node = node->next;
-            }
-            skip_line(&here);
-            continue;
-        }
-
         if (here->text[0] == '.') {
-            report_error(&here->origin, "unknown directive %s", here->text);
-            has_errors = TRUE;
+            int result = parse_directives(here, &output);
+            if (!result) {
+                has_errors = TRUE;
+            }
             skip_line(&here);
             continue;
         }
