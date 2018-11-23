@@ -525,7 +525,7 @@ int parse_directives(struct token *here, struct output_state *output) {
         output->in_header = FALSE;
         output->info->ram_start = output->code_position;
         add_label(&output->info->first_label, "_RAMSTART", output->info->ram_start);
-        return TRUE;
+        return expect_eol(&here);
     }
 
     if (strcmp(here->text, ".extra_memory") == 0) {
@@ -540,7 +540,7 @@ int parse_directives(struct token *here, struct output_state *output) {
             return FALSE;
         }
         output->info->extended_memory = here->i;
-        return TRUE;
+        return expect_eol(&here);
     }
 
     if (strcmp(here->text, ".stack_size") == 0) {
@@ -555,7 +555,7 @@ int parse_directives(struct token *here, struct output_state *output) {
             return FALSE;
         }
         output->info->stack_size = here->i;
-        return TRUE;
+        return expect_eol(&here);
     }
 
     if (strcmp(here->text, ".include") == 0) {
@@ -589,10 +589,13 @@ int parse_directives(struct token *here, struct output_state *output) {
 
         vbuffer_free(buffer);
         output->code_position += buffer->length;
-        return TRUE;
+        return expect_eol(&here);
     }
 
     if (strcmp(here->text, ".string_table") == 0) {
+        if (!expect_eol(&here)) {
+            return FALSE;
+        }
         if (output->info->strings.first == NULL) {
             return TRUE;
         }
