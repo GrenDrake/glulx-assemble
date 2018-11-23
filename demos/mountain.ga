@@ -24,38 +24,43 @@ rubyWord:   .cstring "ruby"
 loc_mainHall_name:      .encoded "Great Hall"
 loc_mainHall_desc:      .encoded "This is the main hallway of the ancient keep of the mountain king. The massive central table still remains, but nothing is left of the chairs that once surronded it but kindling. The entry chamber lies back to the south."
 loc_mainHall:
-.word loc_mainHall_name loc_mainHall_desc   ; name  direction
-.word 0 0 loc_entryHall 0                   ; north east south west
-.word 0 obj_table 0                         ; parent child sibling
-.word 0 0 0                                 ; flags vocab before
+.word 0 obj_table 0 0                       ; parent child sibling flags
+.word PROP_NAME         loc_mainHall_name
+.word PROP_DESCRIPTION  loc_mainHall_desc
+.word PROP_SOUTH        loc_entryHall
+.word 0                 0
 
 obj_table_name:         .encoded "table"
 obj_table_desc:         .encoded "An ancient wooden table. Though it has survived a long time, signs of rot are clearly visible."
 obj_table_vocab:        .word tableWord 0
 obj_table:
-.word obj_table_name obj_table_desc         ; name  direction
-.word 0 0 loc_entryHall 0                   ; north east south west
-.word loc_mainHall 0 obj_throne             ; parent child sibling
-.word OF_STATIC obj_table_vocab 0           ; flags vocab before
+.word loc_mainHall 0 obj_throne OF_STATIC   ; parent child sibling
+.word PROP_NAME         obj_table_name
+.word PROP_DESCRIPTION  obj_table_desc
+.word PROP_VOCAB        obj_table_vocab
+.word 0                 0
 
 obj_throne_name:         .encoded "throne"
 obj_throne_desc:         .encoded "The crumbling throne sits at the end of the table; one can almost imagine the occupant looking out over the others that once gathered around the table."
 obj_throne_vocab:       .word throneWord 0
 obj_throne:
-.word obj_throne_name obj_throne_desc       ; name  direction
-.word 0 0 loc_entryHall 0                   ; north east south west
-.word loc_mainHall 0 obj_ruby               ; parent child sibling
-.word 0 obj_throne_vocab 0                  ; flags vocab before
+.word loc_mainHall 0 obj_ruby OF_STATIC     ; parent child sibling flags
+.word PROP_NAME         obj_throne_name
+.word PROP_DESCRIPTION  obj_throne_desc
+.word PROP_VOCAB        obj_throne_vocab
+.word 0                 0
 
 obj_ruby_name:          .encoded "ruby"
 obj_ruby_desc:          .encoded "The ruby glimmers red."
 obj_ruby_vocab:         .word rubyWord 0
 obj_ruby_before:        .word verbDrop noDropRuby 0
 obj_ruby:
-.word obj_ruby_name obj_ruby_desc           ; name  direction
-.word 0 0 0 0                               ; north east south west
-.word loc_mainHall 0 0                      ; parent child sibling
-.word 0 obj_ruby_vocab obj_ruby_before      ; flags vocab before
+.word loc_mainHall 0 0 0                    ; parent child sibling
+.word PROP_NAME         obj_ruby_name
+.word PROP_DESCRIPTION  obj_ruby_desc
+.word PROP_VOCAB        obj_ruby_vocab
+.word PROP_BEFORE       obj_ruby_before
+.word 0                 0
 
 noDropRubyString: .encoded "Now that you have it, you cannot bear to drop the ruby.\n";
 noDropRuby: .function
@@ -65,10 +70,11 @@ noDropRuby: .function
 loc_entryHall_name:     .encoded "Entry Chamber"
 loc_entryHall_desc:     .encoded "In the days of the Mountain Kingdom, this small chamber gave arriving travellers a place to shake the snow off their boats and coats before heading north, into the great hall."
 loc_entryHall:
-.word loc_entryHall_name loc_entryHall_desc ; name direction
-.word loc_mainHall 0 0 0                    ; north east south west
-.word 0 0 0                                 ; parent child sibling
-.word 0 0 0                                 ; flags vocab before
+.word 0 0 0 0                               ; parent child sibling
+.word PROP_NAME         loc_entryHall_name
+.word PROP_DESCRIPTION  loc_entryHall_desc
+.word PROP_NORTH        loc_mainHall 0 0 0
+.word 0                 0
 
 introString:    .encoded "\n\n\nYou have made the long journey to the abandoned and nearly forogtten hall of the Mountain King of old. Though long empty of life, rumour suggests immeasurable wealth still remains.\n\n"
 initialise: .function
@@ -76,3 +82,4 @@ initialise: .function
     callfii objectMove player loc_entryHall 0
     streamstr introString
     return 0
+

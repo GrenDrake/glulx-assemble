@@ -27,18 +27,22 @@
 .define SOUTH           2
 .define WEST            3
 
-.define OBJ_NAME    0
-.define OBJ_DESC    1
-.define OBJ_NORTH   2
-.define OBJ_EAST    3
-.define OBJ_SOUTH   4
-.define OBJ_WEST    5
-.define OBJ_PARENT  6
-.define OBJ_CHILD   7
-.define OBJ_SIBLING 8
-.define OBJ_FLAGS   9
-.define OBJ_VOCAB   10
-.define OBJ_BEFORE  11
+.define OBJ_PARENT          0
+.define OBJ_CHILD           1
+.define OBJ_SIBLING         2
+.define OBJ_FLAGS           3
+
+.define OBJ_FIRST_PROPERTY  16
+.define OBJ_PROPERTY_SIZE   8
+
+.define PROP_NAME           1000
+.define PROP_DESCRIPTION    1001
+.define PROP_NORTH          1002
+.define PROP_EAST           1003
+.define PROP_SOUTH          1004
+.define PROP_WEST           1005
+.define PROP_VOCAB          1006
+.define PROP_BEFORE         1007
 
 .define OF_STATIC   1
 .define OF_CONCEAL  2
@@ -102,14 +106,14 @@ vocabTable:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 .define DIRECTION_ENTRY_SIZE 8
 directionTable:
-.word nWord NORTH
-.word northWord NORTH
-.word sWord SOUTH
-.word southWord SOUTH
-.word eWord EAST
-.word eastWord EAST
-.word wWord WEST
-.word westWord WEST
+.word nWord     PROP_NORTH
+.word northWord PROP_NORTH
+.word sWord     PROP_SOUTH
+.word southWord PROP_SOUTH
+.word eWord     PROP_EAST
+.word eastWord  PROP_EAST
+.word wWord     PROP_WEST
+.word westWord  PROP_WEST
 .word 0         0
 
 
@@ -118,10 +122,11 @@ player_name:      .encoded "(player)"
 player_desc:      .encoded "You look the same as always."
 player_vocab:     .word meWord playerWord 0
 player:
-.word player_name player_desc               ; name  direction
-.word 0 0 0 0                               ; north east south west
-.word 0 0 0                                 ; parent child sibling
-.word OF_CONCEAL player_vocab 0             ; flags vocab before
+.word 0 0 0 OF_CONCEAL                  ; parent child sibling flags
+.word PROP_NAME         player_name
+.word PROP_DESCRIPTION  player_desc
+.word PROP_VOCAB        player_vocab
+.word 0                 0
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -141,6 +146,21 @@ getSibling: .function       forObject
         aload forObject OBJ_SIBLING sp
         return sp
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+getProperty: .function      forObject propId       thisPropId propAddr
+        add forObject OBJ_FIRST_PROPERTY propAddr
+    getProperty_loop:
+        aload propAddr 0 thisPropId
+        jz thisPropId getProperty_notFound
+        jeq propId thisPropId getProperty_found
+        add propAddr OBJ_PROPERTY_SIZE propAddr
+        jump getProperty_loop
+    getProperty_found:
+        aload propAddr 1 sp
+        return sp
+    getProperty_notFound:
+        return 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 getUnconcealedChild: .function       forObject        curChild
@@ -294,10 +314,18 @@ printCString: .function     text        pos here
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-printObject: .function      forObject
-    aload forObject OBJ_NAME sp
-    streamstr sp
-    return 0
+printObject_unnamedStart:   .encoded "(object #"
+printObject_unnamedEnd:     .encoded ")"
+printObject: .function      forObject       theName
+        callfii getProperty forObject PROP_NAME theName
+        jz theName printObject_unnamed
+        streamstr theName
+        return 0
+    printObject_unnamed:
+        streamstr printObject_unnamedStart
+        streamnum forObject
+        streamstr printObject_unnamedEnd
+        return 0
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -335,7 +363,8 @@ strcmp: .function       left right      pos left_c right_c
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 wordInVocab: .function      forObject wordAddr      vocabList wordNo vocabWord
-        aload forObject OBJ_VOCAB vocabList
+        callfii getProperty forObject PROP_VOCAB vocabList
+        jz vocabList wordInVocab_no
     wordInVocab_loop:
         aload vocabList wordNo vocabWord
         jz vocabWord wordInVocab_no
@@ -491,7 +520,7 @@ start: .function 3
         jz *secondWord start_skipFindNoun
         callfii objectForVocab *secondWord *location *theNoun
         jz *theNoun start_skipFindNoun
-        aload *theNoun OBJ_BEFORE #2
+        callfii getProperty *theNoun PROP_BEFORE #2
         jz #2 start_skipFindNoun
     start_findBeforeLoop:
         aload #2 0 #1
@@ -540,8 +569,7 @@ verbGo: .function       curDir dirWord target
 
     verbGo_foundDir:
         aload curDir 1 curDir
-        add curDir OBJ_NORTH curDir
-        aload *location curDir target
+        callfii getProperty *location curDir target
         jz target verbGo_cantGo
         copy target *location
         callfii objectMove player target 0
@@ -574,16 +602,22 @@ verbInventory: .function        curChild
         return 0
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-cantSeeThatString:  .encoded "You can't see that here.\n"
-verbLook: .function
+cantSeeThatString:      .encoded "You can't see that here.\n"
+nothingSpecialString:   .encoded "You see nothing special about that.\n"
+verbLook: .function     tmp
         jnz *secondWord verbLook_at
         callf verbLookAround 0
         return 0;
     verbLook_at:
         jz *theNoun verbLook_cantSee
-        aload *theNoun OBJ_DESC sp
-        streamstr sp
+        callfii getProperty *theNoun PROP_DESCRIPTION tmp
+        jz tmp verbLook_nodesc
+        streamstr tmp
         streamchar 10
+        jump verbLook_done
+    verbLook_nodesc:
+        streamstr nothingSpecialString
+    verbLook_done:
         return 0
     verbLook_cantSee:
         streamstr cantSeeThatString
@@ -596,7 +630,7 @@ postNameString:         .encoded " *\n"
 youCanSeeString:        .encoded "\nYou can see here: "
 nowhereLocationString:  .encoded "* Nowhere *\nYou are nowhere!\n"
 endObjListString:       .encoded ".\n"
-verbLookAround: .function       curChild
+verbLookAround: .function       curChild tmp
         jz *location verbLook_nowhere
         streamstr preNameString
         copy styleSubheader sp
@@ -605,15 +639,17 @@ verbLookAround: .function       curChild
         copy styleNormal sp
         glk glkSetStyle 1 0
         streamstr postNameString
-        aload *location OBJ_DESC sp
-        streamstr sp
+        callfii getProperty *location PROP_DESCRIPTION tmp
+        jz tmp verbLookAround_nodesc
+        streamstr tmp
         streamchar 10
+    verbLookAround_nodesc:
         callfi getUnconcealedChild *location curChild
-        jz curChild verbLook_done
+        jz curChild verbLookAround_done
         streamstr youCanSeeString
         callfi objectListFrom curChild 0
         streamstr endObjListString
-    verbLook_done:
+    verbLookAround_done:
         return 0
     verbLook_nowhere:
         streamstr nowhereLocationString
