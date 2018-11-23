@@ -106,8 +106,8 @@ void report_error(struct origin *origin, const char *err_text, ...) {
     fputc('\n', stderr);
 }
 
-int token_check_identifier(struct token *token, const char *text) {
-    if (!token || token->type != tt_identifier || strcmp(token->text, text) != 0) {
+int matches_text(struct token *token, enum token_type type, const char *text) {
+    if (!token || token->type != type || strcmp(token->text, text) != 0) {
         return FALSE;
     }
     return TRUE;

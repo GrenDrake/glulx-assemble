@@ -19,6 +19,7 @@
 enum token_type {
     tt_bad,
     tt_identifier,
+    tt_directive,
     tt_integer,
     tt_float,
     tt_string,
@@ -214,7 +215,7 @@ int expect_type(struct token *current, enum token_type type);
 struct token* remove_line(struct token_list *list, struct token *start);
 void skip_line(struct token **current);
 void report_error(struct origin *origin, const char *err_text, ...);
-int token_check_identifier(struct token *token, const char *text);
+int matches_text(struct token *token, enum token_type type, const char *text);
 
 int parse_preprocess(struct token_list *tokens, struct program_info *info);
 int parse_tokens(struct token_list *list, struct program_info *info);

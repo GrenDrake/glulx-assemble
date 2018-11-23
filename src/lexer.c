@@ -189,7 +189,11 @@ struct token_list* lex_core(struct lexer_state *state) {
                 report_error(&start.origin, "found zero length directive");
                 has_errors = 1;
             }
-            a_token = new_token(tt_identifier, token_buf, &start);
+            if (token_buf[0] == '.') {
+                a_token = new_token(tt_directive, token_buf, &start);
+            } else {
+                a_token = new_token(tt_identifier, token_buf, &start);
+            }
             add_token(tokens, a_token);
         } else if (in == '"') {
             struct lexer_state start = *state;

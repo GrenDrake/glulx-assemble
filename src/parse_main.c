@@ -373,7 +373,6 @@ struct operand* parse_operand(struct token **from, struct output_state *output) 
         }
     } else {
         report_error(&here->origin, "unexpected %s token found", token_name(here));
-        from = &here->next;
         free(op);
         return NULL;
     }
@@ -654,6 +653,15 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
             continue;
         }
 
+        if (here->type == tt_directive) {
+            int result = parse_directives(here, &output);
+            if (!result) {
+                has_errors = TRUE;
+            }
+            skip_line(&here);
+            continue;
+        }
+
         if (!expect_type(here, tt_identifier)) {
             has_errors = TRUE;
             skip_line(&here);
@@ -669,15 +677,6 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
             continue;
         }
 
-        if (here->text[0] == '.') {
-            int result = parse_directives(here, &output);
-            if (!result) {
-                has_errors = TRUE;
-            }
-            skip_line(&here);
-            continue;
-        }
-
 /* ************************************************************************** *
  * MNEMONIC PROCESSING                                                        *
  * ************************************************************************** */
@@ -687,7 +686,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
         if (strcmp(here->text, "opcode") == 0) {
             m = &customCode;
             here = here->next;
-            if (token_check_identifier(here, "rel")) {
+            if (matches_text(here, tt_identifier, "rel")) {
                 here = here->next;
                 customCode.last_operand_is_relative= TRUE;
             }
@@ -730,14 +729,13 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
         }
 
         here = here->next;
-        int operand_count = 0;
+        int operand_count = 0, operand_error = FALSE;
         struct operand *op_list = NULL, *op_end = NULL;
-        while (here && here->type != tt_eol) {
+        while (here && here->type != tt_eol && !operand_error) {
             ++operand_count;
             struct operand *op = parse_operand(&here, &output);
             if (op == NULL) {
-                has_errors = TRUE;
-                skip_line(&here);
+                has_errors = operand_error = TRUE;
                 continue;
             } else {
                 if (op_list) {

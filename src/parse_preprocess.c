@@ -20,7 +20,7 @@ int parse_preprocess(struct token_list *tokens, struct program_info *info) {
         }
 
         // encoded strings
-        if (token_check_identifier(here, ".encoded")) {
+        if (matches_text(here, tt_directive, ".encoded")) {
             here = here->next;
             if (!expect_type(here, tt_string)) {
                 skip_line(&here);
@@ -34,7 +34,7 @@ int parse_preprocess(struct token_list *tokens, struct program_info *info) {
         }
 
         // included files
-        if (token_check_identifier(here, ".include")) {
+        if (matches_text(here, tt_directive, ".include")) {
             struct token *before = here->prev;
             struct token *start = here;
             struct token_list *new_tokens = NULL;

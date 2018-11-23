@@ -103,6 +103,7 @@ const char *token_type_name(enum token_type type) {
         case tt_colon:          return "colon";
         case tt_eol:            return "EOL";
         case tt_identifier:     return "identifier";
+        case tt_directive:      return "directive";
         case tt_float:          return "float (internal)";
         case tt_indirect:       return "indirect";
         case tt_integer:        return "integer";
