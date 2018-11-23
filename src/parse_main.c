@@ -491,7 +491,7 @@ int parse_directives(struct token *here, struct output_state *output) {
         int size = encode_string(output->out, &output->info->strings, here->text);
         if (size < 0) return FALSE;
         output->code_position += size;
-        return TRUE;
+        return expect_eol(&here);
     }
 
     if (strcmp(here->text, ".byte") == 0) {
