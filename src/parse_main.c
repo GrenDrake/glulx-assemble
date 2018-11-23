@@ -203,6 +203,8 @@ static int parse_bytes(struct token *first, struct output_state *output, int wid
                 output->code_position += width;
             }
             free_operands(operand);
+        } else {
+            has_errors = TRUE;
         }
     }
     if (output->info->debug_out) {
