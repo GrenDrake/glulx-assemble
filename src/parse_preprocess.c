@@ -22,8 +22,7 @@ int parse_preprocess(struct token_list *tokens, struct program_info *info) {
         // encoded strings
         if (token_check_identifier(here, ".encoded")) {
             here = here->next;
-            if (here->type != tt_string) {
-                report_error(&here->origin, "expected string, found %s", token_name(here));
+            if (!expect_type(here, tt_string)) {
                 skip_line(&here);
                 found_errors = TRUE;
                 continue;
@@ -46,8 +45,7 @@ int parse_preprocess(struct token_list *tokens, struct program_info *info) {
             }
             here = here->next;
 
-            if (here->type != tt_string) {
-                report_error(&here->origin, "Expected string");
+            if (!expect_type(here, tt_string)) {
                 skip_line(&here);
                 found_errors = TRUE;
                 continue;

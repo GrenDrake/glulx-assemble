@@ -86,8 +86,7 @@ static int parse_string_data(struct token *first,
                         int add_type_byte) {
     struct token *here = first->next;
 
-    if (here->type != tt_string) {
-        report_error(&here->origin, "expected string");
+    if (!expect_type(here, tt_string)) {
         return FALSE;
     }
 
@@ -119,8 +118,7 @@ static int parse_unicode_data(struct token *first,
                               struct output_state *output) {
     struct token *here = first->next;
 
-    if (here->type != tt_string) {
-        report_error(&here->origin, "expected string");
+    if (!expect_type(here, tt_string)) {
         return FALSE;
     }
 
@@ -151,8 +149,7 @@ static int parse_unicode_data(struct token *first,
 static int parse_zeroes(struct token *first, struct output_state *output) {
     struct token *here = first->next;
 
-    if (here->type != tt_integer) {
-        report_error(&here->origin, "expected integer, found %s", token_name(here));
+    if (!expect_type(here, tt_integer)) {
         return FALSE;
     }
 
@@ -245,8 +242,7 @@ static int parse_function(struct token *first, struct output_state *output) {
         } else {
             struct local_list *last = NULL;
             while (here && here->type != tt_eol) {
-                if (here->type != tt_identifier) {
-                    report_error(&here->origin, "expected identifier, found %s", token_name(here));
+                if (!expect_type(here, tt_identifier)) {
                     found_errors = TRUE;
                 } else {
                     struct local_list *local = malloc(sizeof(struct local_list));
@@ -376,7 +372,7 @@ struct operand* parse_operand(struct token **from, struct output_state *output) 
             }
         }
     } else {
-        report_error(&here->origin, "unexpected token found");
+        report_error(&here->origin, "unexpected %s token found", token_name(here));
         from = &here->next;
         free(op);
         return NULL;
@@ -425,8 +421,7 @@ int parse_directives(struct token *here, struct output_state *output) {
     if (strcmp(here->text, ".define") == 0) {
         here = here->next;
 
-        if (here->type != tt_identifier) {
-            report_error(&here->origin, "expected identifier");
+        if (!expect_type(here, tt_identifier)) {
             return FALSE;
         }
         const char *name = here->text;
@@ -475,8 +470,7 @@ int parse_directives(struct token *here, struct output_state *output) {
 
     if (strcmp(here->text, ".encoded") == 0) {
         here = here->next;
-        if (here->type != tt_string) {
-            report_error(&here->origin, "Expected string");
+        if (!expect_type(here, tt_string)) {
             return FALSE;
         }
         int size = encode_string(output->out, &output->info->strings, here->text);
@@ -521,8 +515,7 @@ int parse_directives(struct token *here, struct output_state *output) {
 
     if (strcmp(here->text, ".extra_memory") == 0) {
         here = here->next;
-        if (here->type != tt_integer) {
-            report_error(&here->origin, "expected integer, found %s", token_name(here));
+        if (!expect_type(here, tt_integer)) {
             return FALSE;
         }
         if (here->i % 256) {
@@ -537,8 +530,7 @@ int parse_directives(struct token *here, struct output_state *output) {
 
     if (strcmp(here->text, ".stack_size") == 0) {
         here = here->next;
-        if (here->type != tt_integer) {
-            report_error(&here->origin, "expected integer, found %s", token_name(here));
+        if (!expect_type(here, tt_integer)) {
             return FALSE;
         }
         if (here->i % 256) {
@@ -560,8 +552,7 @@ int parse_directives(struct token *here, struct output_state *output) {
 
     if (strcmp(here->text, ".include_binary") == 0) {
         here = here->next;
-        if (here->type != tt_string) {
-            report_error(&here->origin, "expected string, found %s", token_name(here));
+        if (!expect_type(here, tt_string)) {
             return FALSE;
         }
 
@@ -663,9 +654,8 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
             continue;
         }
 
-        if (here->type != tt_identifier) {
-            report_error(&here->origin, "expected identifier");
-            has_errors = 1;
+        if (!expect_type(here, tt_identifier)) {
+            has_errors = TRUE;
             skip_line(&here);
             continue;
         }
@@ -701,12 +691,12 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
                 here = here->next;
                 customCode.last_operand_is_relative= TRUE;
             }
-            if (!here->type) {
-                report_error(&here->origin,
-                            "expected integer, but found %s",
-                            token_name(here));
+            if (!expect_type(here, tt_integer)) {
+                customCode.opcode = 0;
+                has_errors = TRUE;
+            } else {
+                customCode.opcode = here->i;
             }
-            customCode.opcode = here->i;
         } else {
             while (m->name && strcmp(m->name, here->text) != 0) {
                 ++m;

@@ -93,7 +93,12 @@ struct token* new_rawint_token(int value, struct lexer_state *state) {
 }
 
 const char *token_name(struct token *t) {
-    switch(t->type) {
+    if (t == NULL) return "(null)";
+    return token_type_name(t->type);
+}
+
+const char *token_type_name(enum token_type type) {
+    switch(type) {
         case tt_bad:            return "bad token";
         case tt_colon:          return "colon";
         case tt_eol:            return "EOL";

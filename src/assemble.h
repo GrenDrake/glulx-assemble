@@ -190,6 +190,7 @@ void dump_string_frequencies(FILE *dest, struct string_table *table);
 struct token* new_token(enum token_type type, const char *text, struct lexer_state *state);
 struct token* new_rawint_token(int value, struct lexer_state *state);
 const char *token_name(struct token *t);
+const char *token_type_name(enum token_type type);
 struct token_list* init_token_list(void);
 void add_token(struct token_list *list, struct token *new_token);
 void remove_token(struct token_list *list, struct token *token);
@@ -209,6 +210,7 @@ void dump_patches(FILE *dest, struct program_info *info);
 void free_patches(struct backpatch *first);
 
 void expect_eol(struct token **current);
+int expect_type(struct token *current, enum token_type type);
 struct token* remove_line(struct token_list *list, struct token *start);
 void skip_line(struct token **current);
 void report_error(struct origin *origin, const char *err_text, ...);

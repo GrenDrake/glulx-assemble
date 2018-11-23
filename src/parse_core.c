@@ -31,6 +31,14 @@ void expect_eol(struct token **current) {
     }
 }
 
+int expect_type(struct token *current, enum token_type type) {
+    if (current->type != type) {
+        report_error(&current->origin, "expected %s, but found %s.",
+                     token_type_name(type), token_type_name(current->type));
+        return FALSE;
+    }
+    return TRUE;
+}
 /*
     Removes all tokens from the list beginning at *start* and ending at the
     next EOL token (or the end of the token list if not EOL token is found).
