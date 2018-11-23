@@ -432,24 +432,33 @@ int parse_directives(struct token *here, struct output_state *output) {
         const char *name = here->text;
         here = here->next;
 
-        if (here->type != tt_integer) {
-            report_error(&here->origin, "expected integer, found %s", token_name(here));
-            skip_line(&here);
-            return FALSE;
-        }
-
         if (get_label(output->info->first_label, name) != NULL) {
             report_error(&here->origin, "name %s already in use", name);
-            skip_line(&here);
             return FALSE;
         }
 
-        if (!add_label(&output->info->first_label, name, here->i)) {
-            report_error(&here->origin, "error creating constant");
-            skip_line(&here);
-            return FALSE;
+        struct operand *operand = parse_operand(&here, output);
+        if (operand) {
+            if (operand->type != ot_constant) {
+                report_error(&here->origin, ".define value must be constant");
+                free_operands(operand);
+                return FALSE;
+            }
+            if (!operand->known_value) {
+                report_error(&here->origin, ".define value must be previously defined");
+                free_operands(operand);
+                return FALSE;
+            }
+
+            if (!add_label(&output->info->first_label, name, operand->value)) {
+                report_error(&here->origin, "error creating constant");
+                free_operands(operand);
+                return FALSE;
+            }
+            free_operands(operand);
+            return TRUE;
         }
-        return TRUE;
+        return FALSE;
     }
 
     if (strcmp(here->text, ".cstring") == 0) {
