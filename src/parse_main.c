@@ -463,6 +463,9 @@ int parse_directives(struct token *here, struct output_state *output) {
                 return FALSE;
             }
             free_operands(operand);
+            if (!expect_type(here, tt_eol)) {
+                return FALSE;
+            }
             return TRUE;
         }
         return FALSE;
