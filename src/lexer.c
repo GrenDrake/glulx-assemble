@@ -64,7 +64,7 @@ static char* lexer_read_string(int quote_char, struct lexer_state *state) {
 }
 
 static int is_identifier(int ch) {
-    return isalnum(ch) || ch == '.' || ch == '_';
+    return isalnum(ch) || ch == '_';
 }
 
 struct token_list* lex_file(const char *filename) {
@@ -176,15 +176,19 @@ struct token_list* lex_core(struct lexer_state *state) {
                 a_token = new_token(found_dot ? tt_float : tt_integer, token_buf, &start);
                 add_token(tokens, a_token);
             }
-        } else if (is_identifier(in)) {
+        } else if (is_identifier(in) || in == '.') {
             struct lexer_state start = *state;
             buf_pos = 0;
-            while (is_identifier(in)) {
+            do {
                 token_buf[buf_pos] = in;
                 ++buf_pos;
                 in = next_char(state);
-            }
+            } while (is_identifier(in));
             token_buf[buf_pos] = 0;
+            if (token_buf[0] == '.' && token_buf[1] == 0) {
+                report_error(&start.origin, "found zero length directive");
+                has_errors = 1;
+            }
             a_token = new_token(tt_identifier, token_buf, &start);
             add_token(tokens, a_token);
         } else if (in == '"') {
