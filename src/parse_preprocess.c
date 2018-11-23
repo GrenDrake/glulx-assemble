@@ -52,7 +52,7 @@ int parse_preprocess(struct token_list *tokens, struct program_info *info) {
             }
 
             if (here->next && here->next->type != tt_eol) {
-                report_error(&here->origin, "Expected EOL");
+                report_error(&here->next->origin, "Expected EOL");
                 skip_line(&here);
                 found_errors = TRUE;
                 continue;
