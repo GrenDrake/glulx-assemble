@@ -70,9 +70,15 @@ static int is_identifier(int ch) {
 struct token_list* lex_file(const char *filename) {
     struct lexer_state state = { { NULL, 1, 1 } };
     struct vbuffer *buffer = vbuffer_new();
-    state.origin.filename = str_dup(filename);
+    int from_stdin = FALSE;
+    if (strcmp(filename, "-") == 0) {
+        state.origin.filename = str_dup("(stdin)");
+        from_stdin =  TRUE;
+    } else {
+        state.origin.filename = str_dup(filename);
+    }
 
-    int result = vbuffer_readfile(buffer, filename);
+    int result = vbuffer_readfile(buffer, from_stdin ? NULL : filename);
     if (!result) {
         report_error(NULL, "Could not open source file ~%s~.\n", filename);
         vbuffer_free(buffer);

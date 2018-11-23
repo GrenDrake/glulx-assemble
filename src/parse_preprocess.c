@@ -57,6 +57,12 @@ int parse_preprocess(struct token_list *tokens, struct program_info *info) {
                 found_errors = TRUE;
                 continue;
             }
+            if (strcmp(here->text, "-") == 0) {
+                report_error(&here->next->origin, "Including from STDIN is not permitted.");
+                skip_line(&here);
+                found_errors = TRUE;
+                continue;
+            }
 
             new_tokens = lex_file(here->text);
 

@@ -40,7 +40,9 @@ int vbuffer_pushchar(struct vbuffer *buffer, char c) {
 
 int vbuffer_readfile(struct vbuffer *buffer, const char *filename) {
     if (!buffer) return 0;
-    FILE *source = fopen(filename, "rb");
+    FILE *source = NULL;
+    if (filename)   source = fopen(filename, "rb");
+    else            source = stdin;
     if (!source) return 0;
 
     while (1) {
