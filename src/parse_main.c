@@ -422,6 +422,36 @@ static int operand_size(const struct operand *op) {
  * DIRECTIVE PROCESSING                                                       *
  * ************************************************************************** */
 int parse_directives(struct token *here, struct output_state *output) {
+    if (strcmp(here->text, ".define") == 0) {
+        here = here->next;
+
+        if (here->type != tt_identifier) {
+            report_error(&here->origin, "expected identifier");
+            return FALSE;
+        }
+        const char *name = here->text;
+        here = here->next;
+
+        if (here->type != tt_integer) {
+            report_error(&here->origin, "expected integer, found %s", token_name(here));
+            skip_line(&here);
+            return FALSE;
+        }
+
+        if (get_label(output->info->first_label, name) != NULL) {
+            report_error(&here->origin, "name %s already in use", name);
+            skip_line(&here);
+            return FALSE;
+        }
+
+        if (!add_label(&output->info->first_label, name, here->i)) {
+            report_error(&here->origin, "error creating constant");
+            skip_line(&here);
+            return FALSE;
+        }
+        return TRUE;
+    }
+
     if (strcmp(here->text, ".cstring") == 0) {
         return parse_string_data(here, output, FALSE);
     }
@@ -512,8 +542,7 @@ int parse_directives(struct token *here, struct output_state *output) {
         return TRUE;
     }
 
-    if (strcmp(here->text, ".include") == 0
-        || strcmp(here->text, ".define") == 0) {
+    if (strcmp(here->text, ".include") == 0) {
         report_error(&here->origin,
                     "(internal) encountered %s directive after pre-processing",
                     here->text);

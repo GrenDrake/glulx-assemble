@@ -19,43 +19,6 @@ int parse_preprocess(struct token_list *tokens, struct program_info *info) {
             continue;
         }
 
-        // define statements
-        if (here->type == tt_identifier && strcmp(here->text, ".define") == 0) {
-            struct token *start = here;
-            here = here->next;
-
-            if (here->type != tt_identifier) {
-                report_error(&here->origin, "expected identifier");
-                skip_line(&here);
-                continue;
-            }
-            const char *name = here->text;
-            here = here->next;
-
-            if (here->type != tt_integer) {
-                report_error(&here->origin, "expected integer, found %s", token_name(here));
-                skip_line(&here);
-                found_errors = TRUE;
-                continue;
-            }
-
-            if (get_label(info->first_label, name) != NULL) {
-                report_error(&here->origin, "name %s already in use", name);
-                skip_line(&here);
-                found_errors = TRUE;
-                continue;
-            }
-
-            if (!add_label(&info->first_label, name, here->i)) {
-                report_error(&here->origin, "error creating constant");
-                skip_line(&here);
-                found_errors = TRUE;
-                continue;
-            }
-            here = remove_line(tokens, start);
-            continue;
-        }
-
         // encoded strings
         if (token_check_identifier(here, ".encoded")) {
             here = here->next;
