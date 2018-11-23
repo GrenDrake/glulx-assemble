@@ -900,6 +900,10 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
     }
     free_function_locals(&output);
 
+    if (has_errors) {
+        return FALSE;
+    }
+
 
     struct origin objectfile_origin = { (char*)info->output_file, -1 };
 /* ************************************************************************** *
