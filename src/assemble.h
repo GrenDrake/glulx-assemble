@@ -209,7 +209,7 @@ void free_labels(struct label_def *first);
 void dump_patches(FILE *dest, struct program_info *info);
 void free_patches(struct backpatch *first);
 
-void expect_eol(struct token **current);
+int expect_eol(struct token **current);
 int expect_type(struct token *current, enum token_type type);
 struct token* remove_line(struct token_list *list, struct token *start);
 void skip_line(struct token **current);

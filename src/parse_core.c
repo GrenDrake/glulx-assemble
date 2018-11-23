@@ -7,11 +7,11 @@
 #include "assemble.h"
 
 
-void expect_eol(struct token **current) {
+int expect_eol(struct token **current) {
     struct token *here = *current;
 
     if (here == NULL || here->next == NULL) {
-        return;
+        return TRUE;
     }
 
     here = here->next;
@@ -22,6 +22,7 @@ void expect_eol(struct token **current) {
         while (here && here->type != tt_eol) {
             here = here->next;
         }
+        return FALSE;
     }
 
     if (here) {
@@ -29,6 +30,7 @@ void expect_eol(struct token **current) {
     } else {
         *current = NULL;
     }
+    return TRUE;
 }
 
 int expect_type(struct token *current, enum token_type type) {
