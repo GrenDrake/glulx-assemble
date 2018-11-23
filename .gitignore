@@ -2,6 +2,7 @@
 *.o
 glulx-assemble
 test_*
+*.exe
 
 # glulx gamefiles and debugging output
 *.ulx
