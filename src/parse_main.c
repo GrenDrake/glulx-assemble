@@ -632,7 +632,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
     FILE *out = fopen(info->output_file, "wb+");
     output.out = out;
     if (!out) {
-        printf("could not open output file\n");
+        fprintf(stderr, "Could not open output file \"%s\".\n", info->output_file);
         return FALSE;
     }
 
