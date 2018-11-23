@@ -54,6 +54,7 @@ commandbuf:             .zero 256
 firstWord:              .zero 4
 secondWord:             .zero 4
 theNoun:                .zero 4
+itNoun:                 .zero 4
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -67,6 +68,7 @@ helpWord:       .cstring "help"
 iWord:          .cstring "i"
 invWord:        .cstring "inv"
 inventoryWord:  .cstring "inventory"
+itWord:         .cstring "it"
 lWord:          .cstring "l"
 lookWord:       .cstring "look"
 meWord:         .cstring "me"
@@ -518,6 +520,8 @@ start: .function 3
     start_commandGood:
         aload #0 1 #0
         jz *secondWord start_skipFindNoun
+        callfii strcmp *secondWord itWord sp
+        jz sp start_handleIt
         callfii objectForVocab *secondWord *location *theNoun
         jz *theNoun start_skipFindNoun
         callfii getProperty *theNoun PROP_BEFORE #2
@@ -529,11 +533,22 @@ start: .function 3
         add #2 8 #2
         jump start_findBeforeLoop
 
+        noItWordString: .string "\"It\" currently does not refer to anything.\n"
+    start_handleIt:
+        jz *itNoun start_noItWord
+        copy *itNoun *theNoun
+        jump start_skipFindNoun
+    start_noItWord:
+        streamstr noItWordString
+        jump start_mainLoopBegin
     start_runBefore:
         aload #2 1 #1
         callf #1 sp
         jnz sp start_mainLoopBegin
     start_skipFindNoun:
+        jz *theNoun start_dontSetIt
+        copy *theNoun *itNoun
+    start_dontSetIt:
         callf #0 0
         jump start_mainLoopBegin
 
