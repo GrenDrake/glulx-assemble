@@ -51,6 +51,8 @@ int vbuffer_readfile(struct vbuffer *buffer, const char *filename) {
         vbuffer_pushchar(buffer, c);
     }
 
-    fclose(source);
+    if (source != stdin) {
+        fclose(source);
+    }
     return 1;
 }
