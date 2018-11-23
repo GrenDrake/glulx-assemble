@@ -242,7 +242,17 @@ static int parse_function(struct token *first, struct output_state *output) {
                                      here->text);
                         found_errors = TRUE;
                     }
-                    struct local_list *local = malloc(sizeof(struct local_list));
+                    struct local_list *local = output->local_names;
+                    while (local) {
+                        if (strcmp(local->name, here->text) == 0) {
+                            report_error(&here->origin,
+                                        "duplicate named local \"%s\".",
+                                        here->text);
+                            found_errors = TRUE;
+                        }
+                        local = local->next;
+                    }
+                    local = malloc(sizeof(struct local_list));
                     local->name = str_dup(here->text);
                     local->next = NULL;
                     if (last) {
