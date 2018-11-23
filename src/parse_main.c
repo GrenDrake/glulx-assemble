@@ -235,6 +235,12 @@ static int parse_function(struct token *first, struct output_state *output) {
                 if (!expect_type(here, tt_identifier)) {
                     found_errors = TRUE;
                 } else {
+                    if (get_label(output->info->first_label, here->text)) {
+                        report_error(&here->origin,
+                                     "local variable %s shadowed by global value of same name.",
+                                     here->text);
+                        found_errors = TRUE;
+                    }
                     struct local_list *local = malloc(sizeof(struct local_list));
                     local->name = str_dup(here->text);
                     local->next = NULL;
