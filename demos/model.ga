@@ -281,7 +281,7 @@ verbHelp: .function
 
 
 jumpMessageString:  .string "You jump on the fruit, spotlessly.\n"
-verbJump: .function verbJump
+verbJump: .function
         streamstr jumpMessageString
         return 0
 
