@@ -229,6 +229,7 @@ static int parse_function(struct token *first, struct output_state *output) {
     if (here->type != tt_eol) {
         if (here->type == tt_integer) {
             name_count = here->i;
+            expect_eol(&here);
         } else {
             struct local_list *last = NULL;
             while (here && here->type != tt_eol) {
