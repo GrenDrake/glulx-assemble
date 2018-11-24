@@ -98,7 +98,6 @@ const char* test_vbuffer_setshort(void) {
 
     vbuffer_setshort(buffer, 14201, 1);
     vbuffer_setshort(buffer, 13779, 4);
-    printf("%d\n", buffer->length);
     ASSERT_TRUE(buffer->length == 6, "final buffer is correct size");
 
     ASSERT_TRUE(buffer->data[1] == 55, "first byte correct");
