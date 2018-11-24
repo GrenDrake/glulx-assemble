@@ -38,6 +38,23 @@ int vbuffer_pushchar(struct vbuffer *buffer, char c) {
     return 1;
 }
 
+int vbuffer_pushshort(struct vbuffer *buffer, unsigned c) {
+    if (!buffer) return 0;
+    c &= 0xFFFF;
+    vbuffer_pushchar(buffer, (c & 0xFF00) >> 8);
+    vbuffer_pushchar(buffer, c & 0xFF);
+    return 1;
+}
+
+int vbuffer_pushword(struct vbuffer *buffer, unsigned c) {
+    if (!buffer) return 0;
+    vbuffer_pushchar(buffer, (c & 0xFF000000) >> 24);
+    vbuffer_pushchar(buffer, (c & 0xFF0000) >> 16);
+    vbuffer_pushchar(buffer, (c & 0xFF00) >> 8);
+    vbuffer_pushchar(buffer, c & 0xFF);
+    return 1;
+}
+
 int vbuffer_readfile(struct vbuffer *buffer, const char *filename) {
     if (!buffer) return 0;
     FILE *source = NULL;
