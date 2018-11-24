@@ -86,6 +86,59 @@ const char* test_vbuffer_pushword(void) {
     return NULL;
 }
 
+const char* test_vbuffer_setshort(void) {
+    struct vbuffer *buffer = vbuffer_new();
+
+    ASSERT_TRUE(buffer, "buffer is created");
+
+    for (int i = 0; i < 5; ++i) {
+        vbuffer_pushchar(buffer, 0);
+    }
+    ASSERT_TRUE(buffer->length == 5, "initial buffer is correct size");
+
+    vbuffer_setshort(buffer, 14201, 1);
+    vbuffer_setshort(buffer, 13779, 4);
+    printf("%d\n", buffer->length);
+    ASSERT_TRUE(buffer->length == 6, "final buffer is correct size");
+
+    ASSERT_TRUE(buffer->data[1] == 55, "first byte correct");
+    ASSERT_TRUE(buffer->data[2] == 121, "second byte correct");
+
+    ASSERT_TRUE(buffer->data[4] == 53, "third byte correct");
+    ASSERT_TRUE(buffer->data[5] == (char)211, "fourth byte correct");
+
+    vbuffer_free(buffer);
+    return NULL;
+}
+
+const char* test_vbuffer_setword(void) {
+    struct vbuffer *buffer = vbuffer_new();
+
+    ASSERT_TRUE(buffer, "buffer is created");
+
+    for (int i = 0; i < 6; ++i) {
+        vbuffer_pushchar(buffer, 0);
+    }
+    ASSERT_TRUE(buffer->length == 6, "initial buffer is correct size");
+
+    vbuffer_setword(buffer, 930690356, 1);
+    vbuffer_setword(buffer, 3986192095, 7);
+    ASSERT_TRUE(buffer->length == 11, "final buffer is correct size");
+
+    ASSERT_TRUE(buffer->data[1] == 55, "first byte correct");
+    ASSERT_TRUE(buffer->data[2] == 121, "second byte correct");
+    ASSERT_TRUE(buffer->data[3] == 53, "third byte correct");
+    ASSERT_TRUE(buffer->data[4] == 52, "fourth byte correct");
+
+    ASSERT_TRUE(buffer->data[7] == (char)237, "fifth byte correct");
+    ASSERT_TRUE(buffer->data[8] == (char)152, "sixth byte correct");
+    ASSERT_TRUE(buffer->data[9] == 118, "seventh byte correct");
+    ASSERT_TRUE(buffer->data[10] == (char)223, "eigth byte correct");
+
+    vbuffer_free(buffer);
+    return NULL;
+}
+
 const char* test_vbuffer_readfile(void) {
     struct vbuffer *buffer = vbuffer_new();
 
@@ -109,6 +162,8 @@ struct test_def test_list[] = {
     {   "vbuffer_pushchar",                         test_vbuffer_pushchar },
     {   "vbuffer_pushshort",                        test_vbuffer_pushshort },
     {   "vbuffer_pushword",                         test_vbuffer_pushword },
+    {   "vbuffer_setshort",                         test_vbuffer_setshort },
+    {   "vbuffer_setword",                          test_vbuffer_setword },
     {   "vbuffer_readfile",                         test_vbuffer_readfile },
 
     {   NULL,                                       NULL }

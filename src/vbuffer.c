@@ -55,6 +55,31 @@ int vbuffer_pushword(struct vbuffer *buffer, unsigned c) {
     return 1;
 }
 
+int vbuffer_setshort(struct vbuffer *buffer, unsigned new_value, unsigned position) {
+    if (!buffer) return 0;
+    new_value &= 0xFFFF;
+    while (position + 2 > buffer->length) {
+        vbuffer_pushchar(buffer, 0);
+    }
+
+    buffer->data[position] = (new_value & 0xFF00) >> 8;
+    buffer->data[position + 1] = new_value & 0xFF;
+    return 1;
+}
+
+int vbuffer_setword(struct vbuffer *buffer, unsigned new_value, unsigned position) {
+    if (!buffer) return 0;
+    while (position + 4 > buffer->length) {
+        vbuffer_pushchar(buffer, 0);
+    }
+
+    buffer->data[position]     = (new_value & 0xFF000000) >> 24;
+    buffer->data[position + 1] = (new_value & 0xFF0000) >> 16;
+    buffer->data[position + 2] = (new_value & 0xFF00) >> 8;
+    buffer->data[position + 3] = new_value & 0xFF;
+    return 1;
+}
+
 int vbuffer_readfile(struct vbuffer *buffer, const char *filename) {
     if (!buffer) return 0;
     FILE *source = NULL;
