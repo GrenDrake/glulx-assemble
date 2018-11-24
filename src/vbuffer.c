@@ -98,3 +98,22 @@ int vbuffer_readfile(struct vbuffer *buffer, const char *filename) {
     }
     return 1;
 }
+
+int vbuffer_writefile(struct vbuffer *buffer, const char *filename) {
+    int success = 1;
+    if (!buffer) return 0;
+    FILE *source = NULL;
+    if (filename)   source = fopen(filename, "wb");
+    else            source = stdout;
+    if (!source) return 0;
+
+    int count = fwrite(buffer->data, buffer->length, 1, source);
+    if (count != 1) {
+        success = 0;
+    }
+
+    if (source != stdout) {
+        fclose(source);
+    }
+    return success;
+}

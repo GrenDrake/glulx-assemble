@@ -17,5 +17,6 @@ int vbuffer_pushword(struct vbuffer *buffer, unsigned c);
 int vbuffer_setshort(struct vbuffer *buffer, unsigned new_value, unsigned position);
 int vbuffer_setword(struct vbuffer *buffer, unsigned new_value, unsigned position);
 int vbuffer_readfile(struct vbuffer *buffer, const char *filename);
+int vbuffer_writefile(struct vbuffer *buffer, const char *filename);
 
 #endif
