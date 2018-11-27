@@ -163,7 +163,6 @@ struct program_info {
     FILE *debug_out;
 };
 
-struct vbuffer;
 struct output_state {
     struct program_info *info;
     int in_header;
@@ -174,7 +173,6 @@ struct output_state {
     int local_count;
 
     FILE *out;
-    struct vbuffer *output;
 };
 
 void copy_origin(struct origin *dest, struct origin *src);
