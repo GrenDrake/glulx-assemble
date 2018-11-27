@@ -10,7 +10,7 @@
 static void write_byte(FILE *out, uint8_t value);
 static void write_short(FILE *out, uint16_t value);
 static void write_word(FILE *out, uint32_t value);
-static void write_variable(FILE *out, uint32_t value, int width);
+static void write_variable(struct output_state *output, uint32_t value, int width);
 
 static int value_fits(uint32_t value, int width);
 
@@ -51,16 +51,16 @@ static void write_word(FILE *out, uint32_t value) {
     fputc(  value        & 0xFF, out);
 }
 
-static void write_variable(FILE *out, uint32_t value, int width) {
+static void write_variable(struct output_state *output, uint32_t value, int width) {
     switch(width) {
         case 1:
-            write_byte(out, value);
+            write_byte(output->out, value);
             break;
         case 2:
-            write_short(out, value);
+            write_short(output->out, value);
             break;
         case 4:
-            write_word(out, value);
+            write_word(output->out, value);
             break;
     }
 }
@@ -208,7 +208,7 @@ static int parse_bytes(struct token *first, struct output_state *output, int wid
                     free_operands(operand);
                     continue;
                 }
-                write_variable(output->out, operand->value, width);
+                write_variable(output, operand->value, width);
                 output->code_position += width;
             } else {
                 struct backpatch *patch = malloc(sizeof(struct backpatch));
@@ -221,7 +221,7 @@ static int parse_bytes(struct token *first, struct output_state *output, int wid
                     patch->next = output->info->patch_list;
                 }
                 output->info->patch_list = patch;
-                write_variable(output->out, 0, width);
+                write_variable(output, 0, width);
                 output->code_position += width;
             }
             free_operands(operand);
@@ -993,7 +993,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
                         "(warning) value of ~%s~ is larger than storage specification and will be truncated\n",
                         patch->name);
             }
-            write_variable(out, patch->value_final, patch->max_width);
+            write_variable(&output, patch->value_final, patch->max_width);
         } else {
             report_error(&objectfile_origin, "unknown identifier ~%s~",
                     patch->name);
