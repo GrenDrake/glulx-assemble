@@ -161,6 +161,12 @@ These directives can be given labels or named constants as well as the various n
 .encoded "Hello Мир.\n"
 ```
 
+**.pad**: Pads the current length of the output file to the specified amount by adding zero bytes.
+
+```
+.pad 256
+```
+
 **.unicode**: Includes an unencoded unicode string at the current position. A glulx unicode string is a series of four-byte codepoints.
 
 ```

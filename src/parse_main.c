@@ -19,6 +19,7 @@ static int parse_string_data(struct token *first,
                              int add_type_byte);
 static int parse_unicode_data(struct token *first,
                               struct output_state *output);
+static int parse_pad(struct token *first, struct output_state *output);
 static int parse_zeroes(struct token *first, struct output_state *output);
 static int parse_bytes(struct token *first, struct output_state *output, int width);
 static int parse_function(struct token *first, struct output_state *output);
@@ -143,6 +144,27 @@ static int parse_unicode_data(struct token *first,
     write_word(output->out, 0);
     output->code_position += length * 4 + 8;
 
+    expect_eol(&here);
+    return TRUE;
+}
+
+static int parse_pad(struct token *first, struct output_state *output) {
+    struct token *here = first->next;
+
+    if (!expect_type(here, tt_integer)) {
+        return FALSE;
+    }
+
+    int count = 0;
+    while(ftell(output->out) % here->i != 0) {
+        fputc(0, output->out);
+        ++count;
+    }
+
+    if (output->info->debug_out) {
+        fprintf(output->info->debug_out, "0x%08X %d bytes padding\n", output->code_position, count);
+    }
+    output->code_position += count;
     expect_eol(&here);
     return TRUE;
 }
@@ -504,6 +526,9 @@ int parse_directives(struct token *here, struct output_state *output) {
         return parse_bytes(here, output, 4);
     }
 
+    if (strcmp(here->text, ".pad") == 0) {
+        return parse_pad(here, output);
+    }
     if (strcmp(here->text, ".zero") == 0) {
         return parse_zeroes(here, output);
     }
