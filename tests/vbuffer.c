@@ -155,19 +155,35 @@ const char* test_vbuffer_readfile(void) {
     return NULL;
 }
 
-const char* test_vbuffer_pad(void) {
+const char* test_vbuffer_pad_by(void) {
     struct vbuffer *buffer = vbuffer_new();
     ASSERT_TRUE(buffer, "buffer is created");
 
-    vbuffer_pad(buffer, 0x77, 17);
+    vbuffer_pad_by(buffer, 0x12, 21);
+    ASSERT_TRUE(buffer->length == 21, "correctly added 21 bytes");
+    ASSERT_TRUE(buffer->data[8] == 0x12, "bytes have correct value of 0x12");
+
+    vbuffer_pad_by(buffer, 0x0E, 12);
+    ASSERT_TRUE(buffer->length == 33, "correctly added 12 bytes");
+    ASSERT_TRUE(buffer->data[25] == 0x0E, "bytes have correct value of 0x0E");
+
+    vbuffer_free(buffer);
+    return NULL;
+}
+
+const char* test_vbuffer_pad_to(void) {
+    struct vbuffer *buffer = vbuffer_new();
+    ASSERT_TRUE(buffer, "buffer is created");
+
+    vbuffer_pad_to(buffer, 0x77, 17);
     ASSERT_TRUE(buffer->length == 17, "padded correctly to 17");
     ASSERT_TRUE(buffer->data[8] == 0x77, "first padding has correct value");
 
-    vbuffer_pad(buffer, 0x45, 33);
+    vbuffer_pad_to(buffer, 0x45, 33);
     ASSERT_TRUE(buffer->length == 33, "padded correctly to 33");
     ASSERT_TRUE(buffer->data[20] == 0x45, "second padding has correct value");
 
-    vbuffer_pad(buffer, 0x99, 10);
+    vbuffer_pad_to(buffer, 0x99, 10);
     ASSERT_TRUE(buffer->length == 40, "padded correctly to 40 (multiple of 10)");
     ASSERT_TRUE(buffer->data[35] == (char)0x99, "third padding has correct value");
 
@@ -184,7 +200,8 @@ struct test_def test_list[] = {
     {   "vbuffer_setshort",                         test_vbuffer_setshort },
     {   "vbuffer_setword",                          test_vbuffer_setword },
     {   "vbuffer_readfile",                         test_vbuffer_readfile },
-    {   "vbuffer_pad",                              test_vbuffer_pad },
+    {   "vbuffer_pad_to",                           test_vbuffer_pad_to },
+    {   "vbuffer_pad_by",                           test_vbuffer_pad_by },
 
     {   NULL,                                       NULL }
 };

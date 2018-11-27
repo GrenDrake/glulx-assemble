@@ -22,7 +22,14 @@ void vbuffer_free(struct vbuffer *buffer) {
     free(buffer);
 }
 
-int vbuffer_pad(struct vbuffer *buffer, char with, int multipleOf) {
+int vbuffer_pad_by(struct vbuffer *buffer, char with, int amount) {
+    for (int i = 0; i < amount; ++i) {
+        vbuffer_pushchar(buffer, with);
+    }
+    return 1;
+}
+
+int vbuffer_pad_to(struct vbuffer *buffer, char with, int multipleOf) {
     while (buffer->length == 0 || buffer->length % multipleOf != 0) {
         vbuffer_pushchar(buffer, with);
     }

@@ -11,7 +11,8 @@ struct vbuffer {
 
 struct vbuffer* vbuffer_new(void);
 void vbuffer_free(struct vbuffer *buffer);
-int vbuffer_pad(struct vbuffer *buffer, char with, int multipleOf);
+int vbuffer_pad_by(struct vbuffer *buffer, char with, int amount);
+int vbuffer_pad_to(struct vbuffer *buffer, char with, int multipleOf);
 int vbuffer_pushchar(struct vbuffer *buffer, char c);
 int vbuffer_pushshort(struct vbuffer *buffer, unsigned c);
 int vbuffer_pushword(struct vbuffer *buffer, unsigned c);
