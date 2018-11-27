@@ -38,7 +38,7 @@ glulx-assemble is written in standard C99; it should be possible to compile it w
 
 ## Source Files
 
-Source files are text files with the ".ga" extension. The assembler expects them to be encoded using UTF-8. Some sample source files can be found in the demos directory; [basic.ga] provides a "hello world" style example.
+Source files are text files with the ".ga" extension. The assembler expects them to be encoded using UTF-8. Some sample source files can be found in the demos directory; [basic.ga] provides a "hello world" style example. As a special case, the filename can be given as "-" (without the quotes) to read the source file from stdin.
 
 A source file is a sequence of one-line statements that the assembler uses to create a glulx program file. Each line can begin with a label consisting of an identifier followed by a colon (`the_label_name:`). This is followed by the statement for that line.  A source line may also contain a comment; comments begin with a semicolon (`;`) and continue until the end of the line. All of these elements are optional and a source-line may contain all, some, or none of them. An example of a source line containing all three elements is included below:
 
@@ -65,11 +65,14 @@ An instruction statement consists of an opcode mnemonic followed by zero or more
 | Local variable index   | `#2`         | A local variable by position.                                                  |
 | Named constant         | `MAX_LENGTH` | Created with the `.define` directive.                                          |
 
-There is also a special mnemonic `opcode` which allows the use of custom opcodes not known to the assembler. The word `opcode` may be immediately followed by `rel` to indicate that the last operand should be treated as a relative value akin to the jump directives in glulx. Next is the actual number to be used for the opcode followed by all the operands as normal.
+There is also a special mnemonic `opcode` which allows the use of custom opcodes not known to the assembler. The word `opcode` may be immediately followed by `rel` to indicate that the last operand should be treated as a relative value akin to the jump directives in glulx. Next is the opcode number (or constant defined with the opcode number) followed by all the operands as normal.
 
 ```
 opcode 112 32             ; print a single space character
 opcode rel $20 some_label ; jump to "some_label"
+
+.define MY_STREAMCHAR 112
+opcode MY_STREAMCHAR 32             ; print a single space character
 ```
 
 ### Directives
@@ -80,7 +83,7 @@ Two directives are required in any valid glulx-assemble program: `.function` dec
 
 #### General
 
-**.define**: Defines a symbol with a specified constant value. In the current version the value must be a numeric literal, but this will be expanded in future versions.
+**.define**: Defines a symbol with a specified constant value. The value must be a numeric literal or a previously defined constant value.
 
 A few constants are automatically defined. These are *_RAMSTART*, *_EXTSTART*, and *_ENDMEM* which have the same value as header fields of the same name.
 
@@ -124,7 +127,7 @@ Every glulx program must create at least one function identified by the label `s
 
 #### File inclusion
 
-**.include**: Process another file as though its contents occurred at this point in the current file. glulx-assemble will look for included files relative to the current directory, not the directory the current source file is located in. No include guards are used; infinite include loops will freeze or crash the assembler.
+**.include**: Process another file as though its contents occurred at this point in the current file. glulx-assemble will look for included files relative to the current directory, not the directory the current source file is located in. No include guards are used; infinite include loops will freeze or crash the assembler. Included files cannot be read from stdin and the filename "-" is forbidden.
 
 ```
 .include "glk.ga"
