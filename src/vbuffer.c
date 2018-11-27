@@ -22,6 +22,13 @@ void vbuffer_free(struct vbuffer *buffer) {
     free(buffer);
 }
 
+int vbuffer_pad(struct vbuffer *buffer, char with, int multipleOf) {
+    while (buffer->length == 0 || buffer->length % multipleOf != 0) {
+        vbuffer_pushchar(buffer, with);
+    }
+    return 1;
+}
+
 int vbuffer_pushchar(struct vbuffer *buffer, char c) {
     if (!buffer) return 0;
     if (buffer->length >= buffer->capacity) {

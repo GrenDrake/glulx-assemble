@@ -155,6 +155,26 @@ const char* test_vbuffer_readfile(void) {
     return NULL;
 }
 
+const char* test_vbuffer_pad(void) {
+    struct vbuffer *buffer = vbuffer_new();
+    ASSERT_TRUE(buffer, "buffer is created");
+
+    vbuffer_pad(buffer, 0x77, 17);
+    ASSERT_TRUE(buffer->length == 17, "padded correctly to 17");
+    ASSERT_TRUE(buffer->data[8] == 0x77, "first padding has correct value");
+
+    vbuffer_pad(buffer, 0x45, 33);
+    ASSERT_TRUE(buffer->length == 33, "padded correctly to 33");
+    ASSERT_TRUE(buffer->data[20] == 0x45, "second padding has correct value");
+
+    vbuffer_pad(buffer, 0x99, 10);
+    ASSERT_TRUE(buffer->length == 40, "padded correctly to 40 (multiple of 10)");
+    ASSERT_TRUE(buffer->data[35] == (char)0x99, "third padding has correct value");
+
+    vbuffer_free(buffer);
+    return NULL;
+}
+
 const char *test_suite_name = "vbuffer.c";
 struct test_def test_list[] = {
     {   "new_vbuffer",                              test_new_vbuffer },
@@ -164,6 +184,7 @@ struct test_def test_list[] = {
     {   "vbuffer_setshort",                         test_vbuffer_setshort },
     {   "vbuffer_setword",                          test_vbuffer_setword },
     {   "vbuffer_readfile",                         test_vbuffer_readfile },
+    {   "vbuffer_pad",                              test_vbuffer_pad },
 
     {   NULL,                                       NULL }
 };
