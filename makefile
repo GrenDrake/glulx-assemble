@@ -4,7 +4,7 @@ OBJS=src/assemble.o src/lexer.o src/parse_core.o src/parse_main.o \
 TARGET=glulx-assemble
 
 CC=gcc
-CFLAGS=-Wall -std=c99 -pedantic -g
+CFLAGS=-Wall -std=c99 -pedantic -g -Werror
 
 all: $(TARGET) tests demos
 
