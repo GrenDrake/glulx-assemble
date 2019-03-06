@@ -365,7 +365,8 @@ struct operand* parse_operand_constant(struct token **from, struct output_state 
     return op;
 }
 
-struct operand* parse_operand_core(struct token **from, struct output_state *output);
+struct operand* parse_unary_operand(struct token **from, struct output_state *output);
+struct operand* parse_operand_expr(struct token **from, struct output_state *output);
 int eval_operand(struct operand *op, struct output_state *output, int report_unknown_identifiers);
 
 struct operand* parse_operand(struct token **from, struct output_state *output) {
@@ -379,7 +380,7 @@ struct operand* parse_operand(struct token **from, struct output_state *output) 
         here = here->next;
     }
 
-    struct operand *op = parse_operand_core(&here, output);
+    struct operand *op = parse_operand_expr(&here, output);
 
     int result = eval_operand(op, output, FALSE);
     if (result == EVAL_INVALID) {
@@ -398,8 +399,22 @@ struct operand* parse_operand(struct token **from, struct output_state *output) 
     return op;
 }
 
-struct operand* parse_operand_core(struct token **from, struct output_state *output) {
+struct operand* parse_unary_operand(struct token **from, struct output_state *output) {
     struct token *here = *from;
+    enum operator_type op_type = op_value;
+
+    if (here->type == tt_operator) {
+        if (here->i == op_add) {
+            here = here->next;
+        } else if (here->i == op_subtract) {
+            here = here->next;
+            op_type = op_negate;
+        } else {
+            report_error(&here->origin, "operator is not unary");
+            return NULL;
+        }
+    }
+
     struct operand *op = malloc(sizeof(struct operand));
     op->dont_free = FALSE;
     op->type = ot_constant;
@@ -409,19 +424,6 @@ struct operand* parse_operand_core(struct token **from, struct output_state *out
     op->name = NULL;
     op->known_value = FALSE;
     op->force_4byte = FALSE;
-
-    if (here->type == tt_operator) {
-        if (here->i == op_add) {
-            here = here->next;
-        } else if (here->i == op_subtract) {
-            here = here->next;
-            op->op_type = op_negate;
-        } else {
-            report_error(&here->origin, "operator is not unary");
-            free(op);
-            return NULL;
-        }
-    }
 
     if (here->type == tt_integer) {
         op->value = here->i;
@@ -444,6 +446,11 @@ struct operand* parse_operand_core(struct token **from, struct output_state *out
 
     *from = here->next;
     return op;
+}
+
+struct operand* parse_operand_expr(struct token **from, struct output_state *output) {
+    struct operand *left = parse_unary_operand(from, output);
+    return left;
 }
 
 int eval_operand(struct operand *op, struct output_state *output, int report_unknown_identifiers) {
