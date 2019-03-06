@@ -109,7 +109,8 @@ const char *token_type_name(enum token_type type) {
         case tt_indirect:       return "indirect";
         case tt_integer:        return "integer";
         case tt_string:         return "string";
-        default:                return "bad token type";
+        case tt_comma:          return "comma";
+        default:                return "unknown token type";
     }
 }
 

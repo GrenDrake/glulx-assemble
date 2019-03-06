@@ -454,6 +454,8 @@ struct operand* parse_operand_expr(struct token **from, struct output_state *out
 
 int eval_operand(struct operand *op, struct output_state *output, int report_unknown_identifiers) {
     struct label_def *label;
+    if (!op) return EVAL_INVALID;
+
     if (op->op_type == op_negate || op->op_type == op_value) {
         if (op->name) {
             label = get_label(output->info->first_label, op->name);
@@ -855,6 +857,19 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
         int operand_count = 0, operand_error = FALSE;
         struct operand *op_list = NULL, *op_end = NULL;
         while (here && here->type != tt_eol && !operand_error) {
+            if (operand_count > 0) {
+                if (here->type != tt_comma) {
+                    report_error(&here->origin, "expected comma between operands");
+                    has_errors = TRUE;
+                } else {
+                    here = here->next;
+                    if (!here || here->type == tt_eol) {
+                        report_error(&here->origin, "expected operand");
+                        has_errors = TRUE;
+                        continue;
+                    }
+                }
+            }
             ++operand_count;
             struct operand *op = parse_operand(&here, &output);
             if (op == NULL) {

@@ -18,19 +18,19 @@ mainWindow: .zero 4
 ; declare a function for setting up the GLK environment; the zero indicates
 ; that this takes no arguments
 setup: .function
-    setiosys ioSysGlk 0
+    setiosys ioSysGlk, 0
 	; open a GLK window; this is distinct from the application window and
     ; contained within it
-    copy 0 sp
-    copy wintypeTextBuffer sp
-    copy 0 sp
-    copy 0 sp
-    copy 0 sp
-    glk glkWindowOpen 5 *mainWindow
+    copy 0, sp
+    copy wintypeTextBuffer, sp
+    copy 0, sp
+    copy 0, sp
+    copy 0, sp
+    glk glkWindowOpen, 5, *mainWindow
 	; in this case there are no paramaters so we're just using the actual glk
 	; opcode
-    copy *mainWindow sp
-    glk glkSetWindow 1 0
+    copy *mainWindow, sp
+    glk glkSetWindow, 1, 0
 	; all done; return
     return 0
 
@@ -44,23 +44,23 @@ setup: .function
 testFunc: .function value_1 value_2 value_3 value_4 result
 	; start by copying a one into the fifth local; since this defaults to zero,
 	; multiplying anything into it would result in zero as well
-    copy 1 result
+    copy 1, result
 	; print local one and multiply it into local five
     streamnum value_1
     streamchar ' '
-    mul result value_1 result
+    mul result, value_1, result
 	; print local two and multiply it into local five
     streamnum value_2
     streamchar ' '
-    mul result value_2 result
+    mul result, value_2, result
 	; print local three and multiply it into local five
     streamnum value_3
     streamchar ' '
-    mul result value_3 result
+    mul result, value_3, result
 	; print local four and multiply it into local five
     streamnum value_4
     streamchar '\n'
-    mul result value_4 result
+    mul result, value_4, result
 	; return the final result
     return result
 
@@ -68,8 +68,8 @@ printArgsOpenBrace: .string " ("
 ; a sample function that can take a variable argument count; this will display
 ; each argument before returning the sum of those arguments.
 printArgs: .function stk arg_count arg_sum cur_arg
-    copy sp arg_count           ; argument count
-    copy 0 arg_sum              ; argument sum
+    copy sp, arg_count           ; argument count
+    copy 0, arg_sum              ; argument sum
 
     streamstr printArgsOpenBrace
                                 ; print the number of arguments
@@ -77,13 +77,13 @@ printArgs: .function stk arg_count arg_sum cur_arg
     streamchar ')'
 
 printArgsLoop:
-    jle arg_count 0 printArgsDone
+    jle arg_count, 0, printArgsDone
                                 ; if we're out of arguments, jump to the end
-    copy sp cur_arg             ; copy the next argument into local 2
+    copy sp, cur_arg             ; copy the next argument into local 2
     streamchar ' '              ; print a space
     streamnum cur_arg           ; print it
-    add arg_sum cur_arg arg_sum ; add it to the total
-    sub arg_count 1 arg_count   ; decrease the argument count
+    add arg_sum, cur_arg, arg_sum ; add it to the total
+    sub arg_count, 1, arg_count   ; decrease the argument count
     jump printArgsLoop          ; move to the next argument
 
 printArgsDone:
@@ -92,15 +92,15 @@ printArgsDone:
 ; this is a simple function that prints floats to three decimal places; glulx
 ; doesn't seem to have a built in "streamfloat" unfortunately
 printFloat: .function f_num   f_frac f_int
-	fmod f_num 1.0 f_frac f_int
-	ftonumz f_int f_int
+	fmod f_num, 1.0, f_frac, f_int
+	ftonumz f_int, f_int
 	streamnum f_int
 	streamchar '.'
 
-	fmul f_frac 1000.0 f_frac
-	ftonumz f_frac f_frac
-    jge f_frac 0 printFloat_notNegative
-    mul f_frac -1 f_frac
+	fmul f_frac, 1000.0, f_frac
+	ftonumz f_frac, f_frac
+    jge f_frac, 0, printFloat_notNegative
+    mul f_frac, -1, f_frac
 printFloat_notNegative:
 	streamnum f_frac
 
@@ -138,13 +138,13 @@ strKiplingIf:               .string "- Rudyard Kipling, If-\n"
 ; where execution begins
 start: .function local_0 local_1 local_2
 	; call the GLK setup function; this is required for us to have any output
-    callf setup 0
+    callf setup, 0
 
 	; verify the game file and put the result on the stack
     verify sp
 	; if the top of the stack is a zero, the verify was successful and we can
 	; jump over printing the error message
-    jeq sp 0 endverify
+    jeq sp, 0, endverify
 	; print an error message; the inline string will be added to the string
 	; table and replaced with the address of the string
     streamstr strVerifyFailed
@@ -155,16 +155,16 @@ endverify:
 	; copy the address of "testUnicodeString" into the space at the address of
 	; strloc - the * indicates the opcode should act on the contents of the
 	; address rather than the address itself
-    copy testUnicodeString *strloc
+    copy testUnicodeString, *strloc
 	; print the string at the address "theBigString"
     streamstr theBigString
 
 	; call the test function defined earlier; put the results on the stack
-    copy 2 sp
-    copy 67 sp
-    copy 3224 sp
-    copy 8234 sp
-    call testFunc 4 sp
+    copy 2, sp
+    copy 67, sp
+    copy 3224, sp
+    copy 8234, sp
+    call testFunc, 4, sp
 	; output the result of the test function
     streamstr strStdTestFunc
     streamnum sp
@@ -175,40 +175,40 @@ endverify:
     streamchar '\n'
 
 	; display the contents of the raw binary file we included using a loop
-	copy 0 local_0
+	copy 0, local_0
 binDataLoop:
-	aloadb binData local_0 local_1
+	aloadb binData, local_0, local_1
 	streamstr strByte
 	streamnum local_1
 	streamchar '\n'
-	add local_0 1 local_0
-	jne local_0 binLength binDataLoop
+	add local_0, 1, local_0
+	jne local_0, binLength, binDataLoop
 	streamchar '\n'
 
 	; display some arguments using a variable argument count function
     streamstr strVarArgTest
-    callfiii printArgs 1 2 3 sp
+    callfiii printArgs, 1, 2, 3, sp
     streamstr strSpaceEquals
     streamnum sp
 
 	; print two different floats
 	streamstr strPrintIntegralFloat
-	callfi printFloat 7.0 0
+	callfi printFloat, 7.0, 0
 
 	streamstr strPrintNegativeFloat
-	callfi printFloat -5.242 0
+	callfi printFloat, -5.242, 0
 
 	streamstr strPrintNonIntegralFloat
-	callfi printFloat 7.54354 0
+	callfi printFloat, 7.54354, 0
 	streamchar '\n'
 
 	; display a poetry quote as a farewell
 	streamstr strAQuote
-    copy styleEmphasized sp
-	glk glkSetStyle 1 0
+    copy styleEmphasized, sp
+	glk glkSetStyle, 1, 0
 	streamstr kiplingIfQuote
-    copy styleNormal sp
-    glk glkSetStyle 1 0
+    copy styleNormal, sp
+    glk glkSetStyle, 1, 0
     streamstr strKiplingIf
 
 	; all done; return

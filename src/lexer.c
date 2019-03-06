@@ -125,6 +125,10 @@ struct token_list* lex_core(struct lexer_state *state) {
             while (isspace(in)) {
                 in = next_char(state);
             }
+        } else if (in == ',') {
+            a_token = new_token(tt_comma, NULL, state);
+            add_token(tokens, a_token);
+            in = next_char(state);
         } else if (in == '+') {
             a_token = new_token(tt_operator, NULL, state);
             a_token->i = op_add;

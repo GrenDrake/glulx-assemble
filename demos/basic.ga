@@ -18,17 +18,17 @@
 mainWindow: .zero 4
 
 setup: .function
-    setiosys ioSysGlk 0
+    setiosys ioSysGlk, 0
 
-    copy 0 sp
-    copy wintypeTextBuffer sp
-    copy 0 sp
-    copy 0 sp
-    copy 0 sp
-    glk $23 5 *mainWindow
+    copy 0, sp
+    copy wintypeTextBuffer, sp
+    copy 0, sp
+    copy 0, sp
+    copy 0, sp
+    glk $23, 5, *mainWindow
 
-    copy *mainWindow sp
-    glk glkSetWindow 1 0
+    copy *mainWindow, sp
+    glk glkSetWindow, 1, 0
     return 0
 
 ; reports result of verifying gamefile
@@ -43,9 +43,9 @@ strUnicode:                 .unicode "こんにちは世界。\n"
 strHelloWorld:              .encoded "Hello Мир.\n\n"
 
 start: .function
-    call setup 0 0
+    call setup, 0, 0
     verify sp
-    jeq sp 0 verify_good
+    jeq sp, 0, verify_good
     streamstr strVerifyFailed
     jump endverify
 verify_good:
