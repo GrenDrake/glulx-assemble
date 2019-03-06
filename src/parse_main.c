@@ -31,6 +31,9 @@ static void free_function_locals(struct output_state *output);
 
 struct operand* parse_operand_constant(struct token **from, struct output_state *output, int require_known);
 struct operand* parse_operand(struct token **from, struct output_state *output);
+struct operand* parse_unary_operand(struct token **from, struct output_state *output);
+struct operand* parse_operand_expr(struct token **from, struct output_state *output);
+int eval_operand(struct operand *op, struct output_state *output, int report_unknown_identifiers);
 static void free_operands(struct operand *first_operand);
 static int operand_size(const struct operand *op);
 
@@ -364,10 +367,6 @@ struct operand* parse_operand_constant(struct token **from, struct output_state 
     }
     return op;
 }
-
-struct operand* parse_unary_operand(struct token **from, struct output_state *output);
-struct operand* parse_operand_expr(struct token **from, struct output_state *output);
-int eval_operand(struct operand *op, struct output_state *output, int report_unknown_identifiers);
 
 struct operand* parse_operand(struct token **from, struct output_state *output) {
     struct token *here = *from;
