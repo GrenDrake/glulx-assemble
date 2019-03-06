@@ -316,7 +316,7 @@ printCString: .function     text        pos here
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-printObject_unnamedStart:   .encoded "(object #"
+printObject_unnamedStart:   .encoded "(object local_"
 printObject_unnamedEnd:     .encoded ")"
 printObject: .function      forObject       theName
         callfii getProperty forObject PROP_NAME theName
@@ -391,7 +391,7 @@ tooManyWordsString:     .encoded "You used too many words for this game to under
 oneWordString:          .encoded "That command only needs one word.\n"
 twoWordString:          .encoded "That command needs two words.\n"
 ; run the main program loop
-start: .function 3
+start: .function local_0 local_1 local_2
         callf setupGlk 0
         callf initialise 0
         callf verbVersion 0
@@ -419,77 +419,77 @@ start: .function 3
     start_evWindowArrange:
         jump start_inputLoop
     start_evLineInput:
-        aload event 1 #0
-        jne #0 *mainWindow start_inputLoop
+        aload event 1 local_0
+        jne local_0 *mainWindow start_inputLoop
 
 ;       commandbuf now contains a line of input from the main window.
 ;       The line we have received in commandbuf is not null-terminated.
 ;       We handle that first.
-        aload event 2 #0
-        astoreb commandbuf #0 0
+        aload event 2 local_0
+        astoreb commandbuf local_0 0
 
 ;       Then squash to lower-case. (this does not use the newer unicode aware
 ;       functions... oh well)
-        copy 0 #0
+        copy 0 local_0
     start_inputCaseLoop:
-        aloadb commandbuf #0 #1
-        jeq #1 0 start_endCaseLoop
-        copy #1 sp
-        glk glkCharToLower 1 #1
-        astoreb commandbuf #0 #1
-        add #0 1 #0
+        aloadb commandbuf local_0 local_1
+        jeq local_1 0 start_endCaseLoop
+        copy local_1 sp
+        glk glkCharToLower 1 local_1
+        astoreb commandbuf local_0 local_1
+        add local_0 1 local_0
         jump start_inputCaseLoop
     start_endCaseLoop:
 
 ; find and isolate the first two words of input
         copy 0 *firstWord
         copy 0 *secondWord
-        copy 0 #0
+        copy 0 local_0
     start_findStartOfFirstWord:
-        aloadb commandbuf #0 #1
-        jeq #1 0 start_endOfCommandString         ; found end of string
-        jne #1 ' ' start_foundStartOfFirstWord   ; found the start of the word!
-        add #0 1 #0
+        aloadb commandbuf local_0 local_1
+        jeq local_1 0 start_endOfCommandString         ; found end of string
+        jne local_1 ' ' start_foundStartOfFirstWord   ; found the start of the word!
+        add local_0 1 local_0
         jump start_findStartOfFirstWord           ; otherwise skip the space
     start_foundStartOfFirstWord:
-        add #0 commandbuf *firstWord
+        add local_0 commandbuf *firstWord
     start_findEndOfFirstWord:
-        add #0 1 #0
-        aloadb commandbuf #0 #1
-        jeq #1 0 start_foundEndOfFirstWord
-        jeq #1 ' ' start_foundEndOfFirstWord
+        add local_0 1 local_0
+        aloadb commandbuf local_0 local_1
+        jeq local_1 0 start_foundEndOfFirstWord
+        jeq local_1 ' ' start_foundEndOfFirstWord
         jump start_findEndOfFirstWord
     start_foundEndOfFirstWord:
-        astoreb commandbuf #0 0
-        jeq #1 0 start_endOfCommandString
-        add #0 1 #0
+        astoreb commandbuf local_0 0
+        jeq local_1 0 start_endOfCommandString
+        add local_0 1 local_0
     start_findStartOfSecondWord:
-        aloadb commandbuf #0 #1
-        jeq #1 0 start_endOfCommandString
-        jne #1 ' ' start_foundStartOfSecondWord
-        add #0 1 #0
+        aloadb commandbuf local_0 local_1
+        jeq local_1 0 start_endOfCommandString
+        jne local_1 ' ' start_foundStartOfSecondWord
+        add local_0 1 local_0
         jump start_findStartOfSecondWord
     start_foundStartOfSecondWord:
-        add #0 commandbuf *secondWord
+        add local_0 commandbuf *secondWord
     start_findEndOfSecondWord:
-        add #0 1 #0
-        aloadb commandbuf #0 #1
-        jeq #1 0 start_foundEndOfSecondWord
-        jeq #1 ' ' start_foundEndOfSecondWord
+        add local_0 1 local_0
+        aloadb commandbuf local_0 local_1
+        jeq local_1 0 start_foundEndOfSecondWord
+        jeq local_1 ' ' start_foundEndOfSecondWord
         jump start_findEndOfSecondWord
     start_foundEndOfSecondWord:
-        astoreb commandbuf #0 0
+        astoreb commandbuf local_0 0
         jump start_endOfCommandString
 
     start_endOfCommandString:
         jeq *firstWord 0 start_emptyVerb
-        copy vocabTable #0
+        copy vocabTable local_0
     start_verbSearchLoop:
-        aload #0 0 #1
-        jeq #1 0 start_badVerb
-        callfii strcmp *firstWord #1 #2
-        jeq #2 0 start_foundVerb
-        add #0 VOCAB_ENTRY_SIZE #0
+        aload local_0 0 local_1
+        jeq local_1 0 start_badVerb
+        callfii strcmp *firstWord local_1 local_2
+        jeq local_2 0 start_foundVerb
+        add local_0 VOCAB_ENTRY_SIZE local_0
         jump start_verbSearchLoop
 
     start_emptyVerb:
@@ -506,9 +506,9 @@ start: .function 3
 
     start_foundVerb:
         copy 0 *theNoun
-        aload #0 2 #1
-        jeq #1 VERB_EITHER start_commandGood
-        jeq #1 VERB_ONEWORD start_oneWordCommand
+        aload local_0 2 local_1
+        jeq local_1 VERB_EITHER start_commandGood
+        jeq local_1 VERB_ONEWORD start_oneWordCommand
         jnz *secondWord start_commandGood
         streamstr twoWordString
         jump start_mainLoopBegin
@@ -518,19 +518,19 @@ start: .function 3
         jump start_mainLoopBegin
 
     start_commandGood:
-        aload #0 1 #0
+        aload local_0 1 local_0
         jz *secondWord start_skipFindNoun
         callfii strcmp *secondWord itWord sp
         jz sp start_handleIt
         callfii objectForVocab *secondWord *location *theNoun
         jz *theNoun start_skipFindNoun
-        callfii getProperty *theNoun PROP_BEFORE #2
-        jz #2 start_skipFindNoun
+        callfii getProperty *theNoun PROP_BEFORE local_2
+        jz local_2 start_skipFindNoun
     start_findBeforeLoop:
-        aload #2 0 #1
-        jz #1 start_skipFindNoun
-        jeq #1 #0 start_runBefore
-        add #2 8 #2
+        aload local_2 0 local_1
+        jz local_1 start_skipFindNoun
+        jeq local_1 local_0 start_runBefore
+        add local_2 8 local_2
         jump start_findBeforeLoop
 
         noItWordString: .string "\"It\" currently does not refer to anything.\n"
@@ -542,14 +542,14 @@ start: .function 3
         streamstr noItWordString
         jump start_mainLoopBegin
     start_runBefore:
-        aload #2 1 #1
-        callf #1 sp
+        aload local_2 1 local_1
+        callf local_1 sp
         jnz sp start_mainLoopBegin
     start_skipFindNoun:
         jz *theNoun start_dontSetIt
         copy *theNoun *itNoun
     start_dontSetIt:
-        callf #0 0
+        callf local_0 0
         jump start_mainLoopBegin
 
 

@@ -1,4 +1,4 @@
-﻿# glulx-assemble
+# glulx-assemble
 
 glulx-assemble is an assembler for creating [glulx] program files. It is a re- imagined version of my previous project [GGASM] written using C99. The main intentbehind this program is to serve as a backend that assembles data output by other applications, I have tried to design it in such a way that it can be used to create programs in pure assembly as well.
 
@@ -43,7 +43,7 @@ Source files are text files with the ".ga" extension. The assembler expects them
 A source file is a sequence of one-line statements that the assembler uses to create a glulx program file. Each line can begin with a label consisting of an identifier followed by a colon (`the_label_name:`). This is followed by the statement for that line.  A source line may also contain a comment; comments begin with a semicolon (`;`) and continue until the end of the line. All of these elements are optional and a source-line may contain all, some, or none of them. An example of a source line containing all three elements is included below:
 
 ```
-start_loop: aloadb a_string #0 #1   ; load next character from string
+start_loop: aloadb a_string char_num char_dest   ; load next character from string
 ```
 
 There are two kinds of statements: instructions and directives. Instructions make up the majority of most assembly programs and are translated directly into glulx VM instructions. Directives give an instruction to the assembler and may produce output that is written to the glulx file.
@@ -62,7 +62,6 @@ An instruction statement consists of an opcode mnemonic followed by zero or more
 | Floating-point literal | `63.5`       |                                                                                |
 | Label name             | `start_loop` |                                                                                |
 | Local variable name    | `index`      | The name of a local variable declared in the last encountered function header. |
-| Local variable index   | `#2`         | A local variable by position.                                                  |
 | Named constant         | `MAX_LENGTH` | Created with the `.define` directive.                                          |
 
 There is also a special mnemonic `opcode` which allows the use of custom opcodes not known to the assembler. The word `opcode` may be immediately followed by `rel` to indicate that the last operand should be treated as a relative value akin to the jump directives in glulx. Next is the opcode number (or constant defined with the opcode number) followed by all the operands as normal.
@@ -103,13 +102,13 @@ A few constants are automatically defined. These are *_RAMSTART*, *_EXTSTART*, a
 .extra_memory 512
 ```
 
-**.function**: Adds a function header to the output file. The directive may be immediately followed by `stk` to specify that the arguments to this function should be passed on the stack rather than copied into the local variables (see the [glulx spec][glulx spec 6.2] for details). This is followed by the local variable specification. Locals may be specified by either a positive integer (which will create that many unnamed local variables to be accessed by index) or with a list of local variable names. These styles may not be combined, but if a function has no local variables the specification may be omitted entirely.
+**.function**: Adds a function header to the output file. The directive may be immediately followed by `stk` to specify that the arguments to this function should be passed on the stack rather than copied into the local variables (see the [glulx spec][glulx spec 6.2] for details). This is followed by a list of the local variable names; the number of names will determine the number of locals for the function.
 
 
 Every glulx program must create at least one function identified by the label `start`. This will be the entry point of the program. Other functions should generally be identified by appropriate labels as well, though it is not technically required.
 
 ```
-.function stk 7
+.function stk a_local_var
 .function a_number index
 ```
 

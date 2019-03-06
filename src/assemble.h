@@ -25,7 +25,6 @@ enum token_type {
     tt_float,
     tt_string,
     tt_colon,
-    tt_local,
     tt_indirect,
     tt_eol
 };

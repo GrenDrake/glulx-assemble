@@ -255,44 +255,39 @@ static int parse_function(struct token *first, struct output_state *output) {
 
     int name_count = 0;
     if (here->type != tt_eol) {
-        if (here->type == tt_integer) {
-            name_count = here->i;
-            expect_eol(&here);
-        } else {
-            struct local_list *last = NULL;
-            while (here && here->type != tt_eol) {
-                if (!expect_type(here, tt_identifier)) {
+        struct local_list *last = NULL;
+        while (here && here->type != tt_eol) {
+            if (!expect_type(here, tt_identifier)) {
+                found_errors = TRUE;
+            } else {
+                if (get_label(output->info->first_label, here->text)) {
+                    report_error(&here->origin,
+                                    "local variable %s shadowed by global value of same name.",
+                                    here->text);
                     found_errors = TRUE;
-                } else {
-                    if (get_label(output->info->first_label, here->text)) {
+                }
+                struct local_list *local = output->local_names;
+                while (local) {
+                    if (strcmp(local->name, here->text) == 0) {
                         report_error(&here->origin,
-                                     "local variable %s shadowed by global value of same name.",
-                                     here->text);
+                                    "duplicate named local \"%s\".",
+                                    here->text);
                         found_errors = TRUE;
                     }
-                    struct local_list *local = output->local_names;
-                    while (local) {
-                        if (strcmp(local->name, here->text) == 0) {
-                            report_error(&here->origin,
-                                        "duplicate named local \"%s\".",
-                                        here->text);
-                            found_errors = TRUE;
-                        }
-                        local = local->next;
-                    }
-                    local = malloc(sizeof(struct local_list));
-                    local->name = str_dup(here->text);
-                    local->next = NULL;
-                    if (last) {
-                        last->next = local;
-                    } else {
-                        output->local_names = local;
-                    }
-                    last = local;
-                    ++name_count;
+                    local = local->next;
                 }
-                here = here->next;
+                local = malloc(sizeof(struct local_list));
+                local->name = str_dup(here->text);
+                local->next = NULL;
+                if (last) {
+                    last->next = local;
+                } else {
+                    output->local_names = local;
+                }
+                last = local;
+                ++name_count;
             }
+            here = here->next;
         }
     }
 
@@ -383,10 +378,6 @@ struct operand* parse_operand(struct token **from, struct output_state *output) 
         is_indirect = TRUE;
         the_type = ot_indirect;
         here = here->next;
-    } else if (here->type == tt_local) {
-        is_local = TRUE;
-        the_type = ot_local;
-        here = here->next;
     }
 
     struct operand *op = parse_operand_core(&here, output);
@@ -429,9 +420,6 @@ struct operand* parse_operand_core(struct token **from, struct output_state *out
 
     if (here->type == tt_integer) {
         op->value = here->i;
-        if (op->type == ot_local) {
-            op->value *= 4;
-        }
         op->known_value = TRUE;
     } else if (here->type == tt_identifier) {
         if (strcmp(here->text, "sp") == 0) {

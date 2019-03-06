@@ -108,7 +108,6 @@ const char *token_type_name(enum token_type type) {
         case tt_float:          return "float (internal)";
         case tt_indirect:       return "indirect";
         case tt_integer:        return "integer";
-        case tt_local:          return "local";
         case tt_string:         return "string";
         default:                return "bad token type";
     }

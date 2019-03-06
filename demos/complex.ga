@@ -67,42 +67,42 @@ testFunc: .function value_1 value_2 value_3 value_4 result
 printArgsOpenBrace: .string " ("
 ; a sample function that can take a variable argument count; this will display
 ; each argument before returning the sum of those arguments.
-printArgs: .function stk 3
-    copy sp #0         ; argument count
-    copy 0 #1          ; argument sum
+printArgs: .function stk arg_count arg_sum cur_arg
+    copy sp arg_count           ; argument count
+    copy 0 arg_sum              ; argument sum
 
     streamstr printArgsOpenBrace
-                       ; print the number of arguments
-    streamnum #0       ; that were passed in
+                                ; print the number of arguments
+    streamnum arg_count         ; that were passed in
     streamchar ')'
 
 printArgsLoop:
-    jle #0 0 printArgsDone
-                       ; if we're out of arguments, jump to the end
-    copy sp #2         ; copy the next argument into local 2
-    streamchar ' '     ; print a space
-    streamnum #2       ; print it
-    add #1 #2 #1       ; add it to the total
-    sub #0 1 #0        ; decrease the argument count
-    jump printArgsLoop ; move to the next argument
+    jle arg_count 0 printArgsDone
+                                ; if we're out of arguments, jump to the end
+    copy sp cur_arg             ; copy the next argument into local 2
+    streamchar ' '              ; print a space
+    streamnum cur_arg           ; print it
+    add arg_sum cur_arg arg_sum ; add it to the total
+    sub arg_count 1 arg_count   ; decrease the argument count
+    jump printArgsLoop          ; move to the next argument
 
 printArgsDone:
-    return #1          ; return total
+    return arg_sum          ; return total
 
 ; this is a simple function that prints floats to three decimal places; glulx
 ; doesn't seem to have a built in "streamfloat" unfortunately
-printFloat: .function 3
-	fmod #0 1.0 #1 #2
-	ftonumz #2 #2
-	streamnum #2
+printFloat: .function f_num   f_frac f_int
+	fmod f_num 1.0 f_frac f_int
+	ftonumz f_int f_int
+	streamnum f_int
 	streamchar '.'
 
-	fmul #1 1000.0 #1
-	ftonumz #1 #1
-    jge #1 0 printFloat_notNegative
-    mul #1 -1 #1
+	fmul f_frac 1000.0 f_frac
+	ftonumz f_frac f_frac
+    jge f_frac 0 printFloat_notNegative
+    mul f_frac -1 f_frac
 printFloat_notNegative:
-	streamnum #1
+	streamnum f_frac
 
 	return 0
 
@@ -136,7 +136,7 @@ strKiplingIf:               .string "- Rudyard Kipling, If-\n"
 
 ; define the main function; every program must have a main function and this is
 ; where execution begins
-start: .function 3
+start: .function local_0 local_1 local_2
 	; call the GLK setup function; this is required for us to have any output
     callf setup 0
 
@@ -175,14 +175,14 @@ endverify:
     streamchar '\n'
 
 	; display the contents of the raw binary file we included using a loop
-	copy 0 #0
+	copy 0 local_0
 binDataLoop:
-	aloadb binData #0 #1
+	aloadb binData local_0 local_1
 	streamstr strByte
-	streamnum #1
+	streamnum local_1
 	streamchar '\n'
-	add #0 1 #0
-	jne #0 binLength binDataLoop
+	add local_0 1 local_0
+	jne local_0 binLength binDataLoop
 	streamchar '\n'
 
 	; display some arguments using a variable argument count function
