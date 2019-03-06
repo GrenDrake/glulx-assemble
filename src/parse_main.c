@@ -210,6 +210,7 @@ static int parse_bytes(struct token *first, struct output_state *output, int wid
                 }
                 write_variable(output, operand->value, width);
                 output->code_position += width;
+                free_operands(operand);
             } else {
                 struct backpatch *patch = malloc(sizeof(struct backpatch));
                 patch->next = 0;
@@ -217,6 +218,8 @@ static int parse_bytes(struct token *first, struct output_state *output, int wid
                 patch->name = str_dup(operand->name);
                 patch->position = output->code_position;
                 patch->position_after = 0;
+                patch->operand_chain = operand;
+                operand->dont_free = TRUE;
                 if (output->info->patch_list) {
                     patch->next = output->info->patch_list;
                 }
@@ -224,7 +227,6 @@ static int parse_bytes(struct token *first, struct output_state *output, int wid
                 write_variable(output, 0, width);
                 output->code_position += width;
             }
-            free_operands(operand);
         } else {
             has_errors = TRUE;
         }
@@ -368,6 +370,7 @@ struct operand* parse_operand_constant(struct token **from, struct output_state 
 struct operand* parse_operand(struct token **from, struct output_state *output) {
     struct token *here = *from;
     struct operand *op = malloc(sizeof(struct operand));
+    op->dont_free = FALSE;
     op->next = NULL;
     op->known_value = FALSE;
     op->force_4byte = FALSE;
@@ -430,7 +433,11 @@ struct operand* parse_operand(struct token **from, struct output_state *output) 
 static void free_operands(struct operand *first_operand) {
     while (first_operand) {
         struct operand *next = first_operand->next;
-        free(first_operand);
+        if (!first_operand->dont_free) {
+            free(first_operand);
+        } else {
+            first_operand->next = NULL;
+        }
         first_operand = next;
     }
 }
@@ -895,6 +902,8 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
                 patch->name = str_dup(cur_op->name);
                 patch->position = output.code_position;
                 patch->position_after = after_pos;
+                patch->operand_chain = cur_op;
+                cur_op->dont_free = TRUE;
                 if (output.info->patch_list) {
                     patch->next = output.info->patch_list;
                 }
@@ -999,6 +1008,8 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
                     patch->name);
             has_errors = TRUE;
         }
+        patch->operand_chain->dont_free = FALSE;
+        free_operands(patch->operand_chain);
 
         patch = patch->next;
     }

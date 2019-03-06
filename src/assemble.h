@@ -84,6 +84,7 @@ struct operand {
     int force_4byte;
     char *name;
     struct operand *next;
+    int dont_free;
 };
 
 struct token_list {
@@ -97,6 +98,7 @@ struct backpatch {
     int position_after;
     int value_final;
     int max_width;
+    struct operand *operand_chain;
     struct backpatch *next;
 };
 
