@@ -373,7 +373,6 @@ struct operand* parse_operand(struct token **from, struct output_state *output) 
 
     enum operand_type the_type = ot_constant;
     int is_indirect = FALSE;
-    int is_local = FALSE;
     if (here->type == tt_indirect) {
         is_indirect = TRUE;
         the_type = ot_indirect;
@@ -382,11 +381,17 @@ struct operand* parse_operand(struct token **from, struct output_state *output) 
 
     struct operand *op = parse_operand_core(&here, output);
 
-    if (op->type == ot_constant) op->type = the_type;
     int result = eval_operand(op, output, FALSE);
     if (result == EVAL_INVALID) {
         free(op);
         return NULL;
+    }
+    if (is_indirect) {
+        if (op->type != ot_constant) {
+            report_error(&op->origin, "cannot indirect reference operand (is it a local variable?)");
+            free(op);
+            return NULL;
+        }
     }
 
     *from = here;
