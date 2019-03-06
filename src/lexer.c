@@ -129,6 +129,16 @@ struct token_list* lex_core(struct lexer_state *state) {
             a_token = new_token(tt_local, NULL, state);
             add_token(tokens, a_token);
             in = next_char(state);
+        } else if (in == '+') {
+            a_token = new_token(tt_operator, NULL, state);
+            a_token->i = op_add;
+            add_token(tokens, a_token);
+            in = next_char(state);
+        } else if (in == '-') {
+            a_token = new_token(tt_operator, NULL, state);
+            a_token->i = op_subtract;
+            add_token(tokens, a_token);
+            in = next_char(state);
         } else if (in == '*') {
             a_token = new_token(tt_indirect, NULL, state);
             add_token(tokens, a_token);

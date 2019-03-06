@@ -7,6 +7,10 @@
 #include "assemble.h"
 #include "vbuffer.h"
 
+#define EVAL_KNOWN      1
+#define EVAL_UNKNOWN    0
+#define EVAL_INVALID    -1
+
 static void write_byte(FILE *out, uint8_t value);
 static void write_short(FILE *out, uint16_t value);
 static void write_word(FILE *out, uint32_t value);
@@ -366,22 +370,61 @@ struct operand* parse_operand_constant(struct token **from, struct output_state 
     return op;
 }
 
+struct operand* parse_operand_core(struct token **from, struct output_state *output);
+int eval_operand(struct operand *op, struct output_state *output, int report_unknown_identifiers);
 
 struct operand* parse_operand(struct token **from, struct output_state *output) {
     struct token *here = *from;
+
+    enum operand_type the_type = ot_constant;
+    int is_indirect = FALSE;
+    int is_local = FALSE;
+    if (here->type == tt_indirect) {
+        is_indirect = TRUE;
+        the_type = ot_indirect;
+        here = here->next;
+    } else if (here->type == tt_local) {
+        is_local = TRUE;
+        the_type = ot_local;
+        here = here->next;
+    }
+
+    struct operand *op = parse_operand_core(&here, output);
+
+    if (op->type == ot_constant) op->type = the_type;
+    int result = eval_operand(op, output, FALSE);
+    if (result == EVAL_INVALID) {
+        free(op);
+        return NULL;
+    }
+
+    *from = here;
+    return op;
+}
+
+struct operand* parse_operand_core(struct token **from, struct output_state *output) {
+    struct token *here = *from;
     struct operand *op = malloc(sizeof(struct operand));
     op->dont_free = FALSE;
+    op->type = ot_constant;
+    op->origin = here->origin;
+    op->op_type = op_value;
     op->next = NULL;
+    op->name = NULL;
     op->known_value = FALSE;
     op->force_4byte = FALSE;
 
-    op->type = ot_constant;
-    if (here->type == tt_indirect) {
-        op->type = ot_indirect;
-        here = here->next;
-    } else if (here->type == tt_local) {
-        op->type = ot_local;
-        here = here->next;
+    if (here->type == tt_operator) {
+        if (here->i == op_add) {
+            here = here->next;
+        } else if (here->i == op_subtract) {
+            here = here->next;
+            op->op_type = op_negate;
+        } else {
+            report_error(&here->origin, "operator is not unary");
+            free(op);
+            return NULL;
+        }
     }
 
     if (here->type == tt_integer) {
@@ -396,29 +439,9 @@ struct operand* parse_operand(struct token **from, struct output_state *output) 
             op->value = 0;
             op->known_value = TRUE;
         } else {
-            struct label_def *label = get_label(output->info->first_label, here->text);
-            if (label) {
-                op->value = label->pos;
-                op->known_value = TRUE;
-            } else {
-                struct local_list *local = output->local_names;
-                int counter = 0;
-                while (local) {
-                    if (strcmp(local->name, here->text) == 0) {
-                        op->type = ot_local;
-                        op->value = counter * 4;
-                        op->known_value = TRUE;
-                        break;
-                    }
-                    local = local->next;
-                    ++counter;
-                }
-
-                if (!op->known_value) {
-                    op->name = here->text;
-                    op->value = 0;
-                }
-            }
+            op->name = here->text;
+            op->value = 0;
+            op->known_value = FALSE;
         }
     } else {
         report_error(&here->origin, "unexpected %s token found", token_name(here));
@@ -429,6 +452,53 @@ struct operand* parse_operand(struct token **from, struct output_state *output) 
     *from = here->next;
     return op;
 }
+
+int eval_operand(struct operand *op, struct output_state *output, int report_unknown_identifiers) {
+    struct label_def *label;
+    if (op->op_type == op_negate || op->op_type == op_value) {
+        if (op->name) {
+            label = get_label(output->info->first_label, op->name);
+            if (label) {
+                op->value = label->pos;
+                op->known_value = EVAL_KNOWN;
+            } else {
+                struct local_list *local = output->local_names;
+                int counter = 0;
+                while (local) {
+                    if (strcmp(local->name, op->name) == 0) {
+                        op->type = ot_local;
+                        op->value = counter * 4;
+                        op->known_value = EVAL_KNOWN;
+                        break;
+                    }
+                    local = local->next;
+                    ++counter;
+                }
+            }
+        }
+        if (!op->known_value) {
+            if (report_unknown_identifiers) {
+                report_error(&op->origin, "unknown identifier ~%s~",
+                    op->name);
+            }
+            return EVAL_UNKNOWN;
+        } else {
+            if (op->op_type == op_negate) {
+                if (op->type != ot_constant) {
+                    report_error(&op->origin, "cannot negate non-constant value",
+                        op->name);
+                    return EVAL_INVALID;
+                }
+                op->value = -op->value;
+            }
+            return EVAL_KNOWN;
+        }
+    }
+
+    report_error(&op->origin, "unhandled operation type");
+    return EVAL_INVALID;
+}
+
 
 static void free_operands(struct operand *first_operand) {
     while (first_operand) {
@@ -986,11 +1056,12 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
 /* ************************************************************************** *
  * PROCESS BACKPATCH LIST                                                     *
  * ************************************************************************** */
+    free_function_locals(&output);
     struct backpatch *patch = output.info->patch_list;
     while (patch) {
-        struct label_def *label = get_label(output.info->first_label, patch->name);
-        if (label) {
-            patch->value_final = label->pos;
+        int result = eval_operand(patch->operand_chain, &output, TRUE);
+        if (result == EVAL_KNOWN) {
+            patch->value_final = patch->operand_chain->value;
 
             if (patch->position_after) {
                 patch->value_final = patch->value_final - patch->position_after + 2;
@@ -1004,8 +1075,6 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
             }
             write_variable(&output, patch->value_final, patch->max_width);
         } else {
-            report_error(&objectfile_origin, "unknown identifier ~%s~",
-                    patch->name);
             has_errors = TRUE;
         }
         patch->operand_chain->dont_free = FALSE;

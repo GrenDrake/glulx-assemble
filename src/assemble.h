@@ -20,6 +20,7 @@ enum token_type {
     tt_bad,
     tt_identifier,
     tt_directive,
+    tt_operator,
     tt_integer,
     tt_float,
     tt_string,
@@ -27,6 +28,15 @@ enum token_type {
     tt_local,
     tt_indirect,
     tt_eol
+};
+
+enum operator_type {
+    op_value,
+    op_add,
+    op_subtract,
+    op_multiply,
+    op_divide,
+    op_negate,
 };
 
 enum operand_type {
@@ -78,11 +88,14 @@ struct lexer_state {
 };
 
 struct operand {
+    struct origin origin;
     enum operand_type type;
     int value;
     int known_value;
     int force_4byte;
     char *name;
+    enum operator_type op_type;
+    struct operand *left, *right;
     struct operand *next;
     int dont_free;
 };

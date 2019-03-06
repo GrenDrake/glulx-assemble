@@ -104,6 +104,7 @@ const char *token_type_name(enum token_type type) {
         case tt_eol:            return "EOL";
         case tt_identifier:     return "identifier";
         case tt_directive:      return "directive";
+        case tt_operator:       return "operator";
         case tt_float:          return "float (internal)";
         case tt_indirect:       return "indirect";
         case tt_integer:        return "integer";
@@ -232,6 +233,8 @@ void dump_token_list(FILE *dest, struct token_list *list) {
         }
         if (current->type == tt_integer) {
             fprintf(dest, "  i:%d", current->i);
+        } else if (current->type == tt_operator) {
+            fprintf(dest, "  o:%d", current->i);
         }
         fprintf(dest, "\n");
 
