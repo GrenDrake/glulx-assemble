@@ -183,7 +183,7 @@ const char* test_vbuffer_pad_to(void) {
     ASSERT_TRUE(buffer->length == 33, "padded correctly to 33");
     ASSERT_TRUE(buffer->data[20] == 0x45, "second padding has correct value");
 
-    vbuffer_pad_to(buffer, 0x99, 10);
+    vbuffer_pad_to(buffer, (char)0x99, 10);
     ASSERT_TRUE(buffer->length == 40, "padded correctly to 40 (multiple of 10)");
     ASSERT_TRUE(buffer->data[35] == (char)0x99, "third padding has correct value");
 
