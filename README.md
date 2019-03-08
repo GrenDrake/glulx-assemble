@@ -43,7 +43,7 @@ Source files are text files with the ".ga" extension. The assembler expects them
 A source file is a sequence of one-line statements that the assembler uses to create a glulx program file. Each line can begin with a label consisting of an identifier followed by a colon (`the_label_name:`). This is followed by the statement for that line.  A source line may also contain a comment; comments begin with a semicolon (`;`) and continue until the end of the line. All of these elements are optional and a source-line may contain all, some, or none of them. An example of a source line containing all three elements is included below:
 
 ```
-start_loop: aloadb a_string char_num char_dest   ; load next character from string
+start_loop: aloadb a_string, char_num, char_dest   ; load next character from string
 ```
 
 There are two kinds of statements: instructions and directives. Instructions make up the majority of most assembly programs and are translated directly into glulx VM instructions. Directives give an instruction to the assembler and may produce output that is written to the glulx file.
@@ -52,7 +52,7 @@ There are two kinds of statements: instructions and directives. Instructions mak
 
 ### Instructions
 
-An instruction statement consists of an opcode mnemonic followed by zero or more operands. For an index of opcodes and their expected operands, check the [relevant part of the glulx spec]. There are several types of values that an operand can have, summed up in the table below:
+An instruction statement consists of an opcode mnemonic followed by zero or more operands separated by commas. For an index of opcodes and their expected operands, check the [relevant part of the glulx spec]. There are several types of values that an operand can have, summed up in the table below:
 
 
 |          Type          |    Sample    |                                  Description                                   |
