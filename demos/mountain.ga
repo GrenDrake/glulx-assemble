@@ -78,8 +78,8 @@ loc_entryHall:
 
 introString:    .encoded "\n\n\nYou have made the long journey to the abandoned and nearly forogtten hall of the Mountain King of old. Though long empty of life, rumour suggests immeasurable wealth still remains.\n\n"
 initialise: .function
-    copy loc_entryHall *location
-    callfii objectMove player loc_entryHall 0
+    copy loc_entryHall, *location
+    callfii objectMove, player, loc_entryHall, 0
     streamstr introString
     return 0
 

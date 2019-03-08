@@ -74,52 +74,52 @@ event:          .zero 16
 ; of C, it's actually called "start" here.]
 start: .function local_0 local_1 local_2
         ; set the io system to GLK
-        setiosys ioSysGlk 0
+        setiosys ioSysGlk, 0
         ; Open the main window.
-        copy 1 sp
-        copy wintypeTextBuffer sp
-        copy 0 sp
-        copy 0 sp
-        copy 0 sp
-        glk glkWindowOpen 5 *mainwin
-        jne *mainwin 0 windowOpened
+        copy 1, sp
+        copy wintypeTextBuffer, sp
+        copy 0, sp
+        copy 0, sp
+        copy 0, sp
+        glk glkWindowOpen, 5, *mainwin
+        jne *mainwin, 0, windowOpened
         ; It's possible that the main window failed to open. There's
         ; nothing we can do without it, so exit.
         quit
 
     windowOpened:
         ; Set the current output stream to print to it.
-        copy *mainwin sp
-        glk glkSetWindow 1 0
+        copy *mainwin, sp
+        glk glkSetWindow, 1, 0
 
         ; Open a second window: a text grid, above the main window, three lines
         ; high. It is possible that this will fail also, but we accept that.
-        copy 0 sp
-        copy wintypeTextGrid sp
-        copy 3 sp
-        copy winmethodAbove sp
-        bitor sp winmethodFixed sp
-        copy *mainwin sp
-        glk glkWindowOpen 5 *statuswin
+        copy 0, sp
+        copy wintypeTextGrid, sp
+        copy 3, sp
+        copy winmethodAbove, sp
+        bitor sp, winmethodFixed, sp
+        copy *mainwin, sp
+        glk glkWindowOpen, 5, *statuswin
 
         ; The third window, quotewin, isn't opened immediately. We'll do
         ; that in verb_quote().
 
         streamstr versionString
 
-        copy 0 *current_room ; set initial location.
-        copy 1 *need_look
+        copy 0, *current_room ; set initial location.
+        copy 1, *need_look
 
 
 
     mainLoopBegin:
-        callf drawStatusWindow 0
+        callf drawStatusWindow, 0
 
-        jne *need_look 1 skipLook
+        jne *need_look, 1, skipLook
         streamchar '\n'
-        copy styleSubheader sp
-        glk glkSetStyle 1 0
-        jne *current_room 0 otherRoom
+        copy styleSubheader, sp
+        glk glkSetStyle, 1, 0
+        jne *current_room, 0, otherRoom
         streamstr roomOneName
         streamchar 10
         jump doneName
@@ -127,8 +127,8 @@ start: .function local_0 local_1 local_2
         streamstr roomTwoName
         streamchar 10
     doneName:
-        copy styleNormal sp
-        glk glkSetStyle 1 0
+        copy styleNormal, sp
+        glk glkSetStyle, 1, 0
         streamstr roomDescriptionString
     skipLook:
 
@@ -137,19 +137,19 @@ start: .function local_0 local_1 local_2
         ; are going to stick a null character at the end, so we have to
         ; leave room for that. Note that the Glk library does *not*
         ; put on that null character.
-        mzero 32 commandbuf
-        copy 0 sp
-        copy 255 sp
-        copy commandbuf sp
-        copy *mainwin sp
-        glk glkRequestLineEvent 4 0
+        mzero 32, commandbuf
+        copy 0, sp
+        copy 255, sp
+        copy commandbuf, sp
+        copy *mainwin, sp
+        glk glkRequestLineEvent, 4, 0
 
     inputLoop:
-        copy event sp
-        glk glkSelect 1 0
+        copy event, sp
+        glk glkSelect, 1, 0
 
-        jeq *event evtypeArrange   evWindowArrange
-        jeq *event evtypeLineInput evLineInput
+        jeq *event, evtypeArrange,   evWindowArrange
+        jeq *event, evtypeLineInput, evLineInput
         streamstr unexpectedEventString
         jump inputLoop
 
@@ -163,8 +163,8 @@ start: .function local_0 local_1 local_2
 ;       event comes from the mainwin request. If the
 ;       line event comes from anywhere else, we ignore
 ;       it.
-        aload event 1 local_0
-        jne local_0 *mainwin inputLoop
+        aload event, 1, local_0
+        jne local_0, *mainwin, inputLoop
         jump gotLine
 
 
@@ -175,75 +175,75 @@ start: .function local_0 local_1 local_2
 ;       First, if there's a blockquote window open, let's close it.
 ;       This ensures that quotes remain visible for exactly one
 ;       command.
-        jeq *quotewin 0 skipCloseQuoteWindow
-        copy 0 sp
-        copy *quotewin sp
-        glk glkWindowClose 2 0
-        copy 0 *quotewin
+        jeq *quotewin, 0, skipCloseQuoteWindow
+        copy 0, sp
+        copy *quotewin, sp
+        glk glkWindowClose, 2, 0
+        copy 0, *quotewin
     skipCloseQuoteWindow:
 
 ;       The line we have received in commandbuf is not null-terminated.
 ;       We handle that first.
-        aload event 2 local_0
-        astoreb commandbuf local_0 0
+        aload event, 2, local_0
+        astoreb commandbuf, local_0, 0
 
 ;       Then squash to lower-case. (this does not use the newer unicode aware
 ;       functions... oh well)
-        copy 0 local_0
+        copy 0, local_0
     inputCaseLoop:
-        aloadb commandbuf local_0 local_1
-        jeq local_1 0 endCaseLoop
-        copy local_1 sp
-        glk glkCharToLower 1 local_1
-        astoreb commandbuf local_0 local_1
-        add local_0 1 local_0
+        aloadb commandbuf, local_0, local_1
+        jeq local_1, 0, endCaseLoop
+        copy local_1, sp
+        glk glkCharToLower, 1, local_1
+        astoreb commandbuf, local_0, local_1
+        add local_0, 1, local_0
         jump inputCaseLoop
     endCaseLoop:
 
 ;       Then trim whitespace before and after.
-        aload event 2 local_0
-        sub local_0 1 local_0
+        aload event, 2, local_0
+        sub local_0, 1, local_0
     trimTrailingLoop:
-        aloadb commandbuf local_0 local_1
-        jne local_1 32 doneTrimTrailing
-        astoreb commandbuf local_0 0
-        sub local_0 1 local_0
+        aloadb commandbuf, local_0, local_1
+        jne local_1, 32, doneTrimTrailing
+        astoreb commandbuf, local_0, 0
+        sub local_0, 1, local_0
         ; if we've hit the beginning of the string, we're done
-        jlt local_0 0 doneTrimTrailing
+        jlt local_0, 0, doneTrimTrailing
         jump trimTrailingLoop
     doneTrimTrailing:
 
         ; to trim the initial whitespace we first need to find the first
         ; non-space character
-        copy 0 local_0
+        copy 0, local_0
     findOffsetLoop:
-        aloadb commandbuf local_0 local_1
-        jne local_1 32 doneTrimInitialFindOffset
-        jeq local_1 0  doneTrimInitialFindOffset
-        add local_0 1 local_0
+        aloadb commandbuf, local_0, local_1
+        jne local_1, 32, doneTrimInitialFindOffset
+        jeq local_1, 0,  doneTrimInitialFindOffset
+        add local_0, 1, local_0
         jump findOffsetLoop
 
         ; then we copy the characters after that point to their respective
         ; places starting at the beginning of the buffer
     doneTrimInitialFindOffset:
-        copy 0 local_1
+        copy 0, local_1
     trimInitialLoop:
-        aloadb commandbuf local_0 local_2
-        astoreb commandbuf local_1 local_2
-        jeq local_2 0 doneTrimInitial
-        add local_0 1 local_0
-        add local_1 1 local_1
+        aloadb commandbuf, local_0, local_2
+        astoreb commandbuf, local_1, local_2
+        jeq local_2, 0, doneTrimInitial
+        add local_0, 1, local_0
+        add local_1, 1, local_1
         jump trimInitialLoop
     doneTrimInitial:
 
-        aloadb commandbuf 0 sp
-        jeq sp 0 blankCommand
+        aloadb commandbuf, 0, sp
+        jeq sp, 0, blankCommand
 
-        linearsearch commandbuf VOCAB_WORD_SIZE vocabTable VOCAB_SIZE -1 0 3 local_0
-        jeq local_0 0 unknownCommand
-        aload local_0 3 local_0
-        callf local_0 0
-        copy 0 local_0
+        linearsearch commandbuf, VOCAB_WORD_SIZE, vocabTable, VOCAB_SIZE, -1, 0, 3, local_0
+        jeq local_0, 0, unknownCommand
+        aload local_0, 3, local_0
+        callf local_0, 0
+        copy 0, local_0
         jump mainLoopBegin
 
     blankCommand:
@@ -252,7 +252,7 @@ start: .function local_0 local_1 local_2
 
     unknownCommand:
         streamstr unknownCommandString
-        callfi printBuffer commandbuf 0
+        callfi printBuffer, commandbuf, 0
         streamstr unknownCommandEndString
         jump mainLoopBegin
 
@@ -287,12 +287,12 @@ verbJump: .function
 
 
 verbMove: .function
-        copy 1 *need_look
-        jeq *current_room 0 verbMoveBack
-        copy 0 *current_room
+        copy 1, *need_look
+        jeq *current_room, 0, verbMoveBack
+        copy 0, *current_room
         return 0
     verbMoveBack:
-        copy 1 *current_room
+        copy 1, *current_room
         return 0
 
 
@@ -300,39 +300,39 @@ unablePlaceSaveFileString:  .string "Unable to place save file.\n"
 unableWriteSaveFileString:  .string "Unable to write to save file.\n"
 savedString:                .string "Game saved.\n"
 verbSave: .function local_0 local_1 local_2
-        copy fileusageSavedGame local_0
-        bitor local_0 fileusageBinaryMode local_0
-        copy 0 sp
-        copy filemodeWrite sp
-        copy local_0 sp
-        glk glkFilerefCreateByPrompt 3 local_0
-        jne local_0 0 vsRefGood
+        copy fileusageSavedGame, local_0
+        bitor local_0, fileusageBinaryMode, local_0
+        copy 0, sp
+        copy filemodeWrite, sp
+        copy local_0, sp
+        glk glkFilerefCreateByPrompt, 3, local_0
+        jne local_0, 0, vsRefGood
         streamstr unablePlaceSaveFileString
         return 0
 
     vsRefGood:
-        copy 0 sp
-        copy filemodeWrite sp
-        copy local_0 sp
-        glk glkStreamOpenFile 3 local_1
-        copy local_0 sp
-        glk glkFilerefDestroy 1 0
-        jne local_1 0 vsStrGood
+        copy 0, sp
+        copy filemodeWrite, sp
+        copy local_0, sp
+        glk glkStreamOpenFile, 3, local_1
+        copy local_0, sp
+        glk glkFilerefDestroy, 1, 0
+        jne local_1, 0, vsStrGood
         streamstr unableWriteSaveFileString
         return 0
 
     vsStrGood:
-        copy 0 local_2
+        copy 0, local_2
     vsLoop:
-        copy local_2 sp
-        copy local_1 sp
-        glk glkPutCharStream 2 0
-        add local_2 1 local_2
-        jne local_2 256 vsLoop
+        copy local_2, sp
+        copy local_1, sp
+        glk glkPutCharStream, 2, 0
+        add local_2, 1, local_2
+        jne local_2, 256, vsLoop
 
-        copy 0 sp
-        copy local_1 sp
-        glk glkStreamClose 2 0
+        copy 0, sp
+        copy local_1, sp
+        glk glkStreamClose, 2, 0
         streamstr savedString
         return 0
 
@@ -343,55 +343,55 @@ notValidSaveString:     .string "This does not appear to be a valid saved game.\
 failedString:           .string "Failed.\n"
 restoredString:         .string "Game restored.\n"
 verbRestore: .function  local_0 local_1 local_2 local_3
-        copy fileusageSavedGame local_0
-        bitor local_0 fileusageBinaryMode local_0
-        copy 0 sp
-        copy filemodeRead sp
-        copy local_0 sp
-        glk glkFilerefCreateByPrompt 3 local_0
-        jne local_0 0 vrRefGood
+        copy fileusageSavedGame, local_0
+        bitor local_0, fileusageBinaryMode, local_0
+        copy 0, sp
+        copy filemodeRead, sp
+        copy local_0, sp
+        glk glkFilerefCreateByPrompt, 3, local_0
+        jne local_0, 0, vrRefGood
         streamstr unableFindSaveFile
 
     vrRefGood:
-        copy 0 sp
-        copy filemodeRead sp
-        copy local_0 sp
-        glk glkStreamOpenFile 3 local_1
-        copy local_0 sp
-        glk glkFilerefDestroy 1 0
-        jne local_1 0 vrStrGood
+        copy 0, sp
+        copy filemodeRead, sp
+        copy local_0, sp
+        glk glkStreamOpenFile, 3, local_1
+        copy local_0, sp
+        glk glkFilerefDestroy, 1, 0
+        jne local_1, 0, vrStrGood
         streamstr unableReadSaveFile
         return 0
 
     vrStrGood:
-        copy 0 local_2
+        copy 0, local_2
     vrLoop:
-        copy local_1 sp
-        glk glkGetCharStream 1 local_0
+        copy local_1, sp
+        glk glkGetCharStream, 1, local_0
 
         ; check for EOF
-        jne local_0 $ffffffff vrLoopGood
+        jne local_0, $ffffffff, vrLoopGood
         streamstr unexpectedEndOfFile
-        copy 1 local_3
+        copy 1, local_3
         jump vrDone
 
     vrLoopGood:
          ; check appropriate character
-        jeq local_0 local_2 vrNoError
+        jeq local_0, local_2, vrNoError
         streamstr notValidSaveString
-        copy 1 local_3
+        copy 1, local_3
         jump vrDone
 
     vrNoError:
-        add local_2 1 local_2
-        jlt local_2 256 vrLoop
+        add local_2, 1, local_2
+        jlt local_2, 256, vrLoop
 
 
     vrDone:
-        copy 0 sp
-        copy local_1 sp
-        glk glkStreamClose 2 0
-        jeq local_3 0 vrDoneSuccess
+        copy 0, sp
+        copy local_1, sp
+        glk glkStreamClose, 2, 0
+        jeq local_3, 0, vrDoneSuccess
         streamstr failedString
         return 0
 
@@ -406,42 +406,42 @@ unableWriteScriptFile:      .string "Unable to write to script file.\n"
 scriptingOnString:          .string "Scripting on.\n"
 beginningTranscriptString:  .string "This is the beginning of a transcript.\n"
 verbScript: .function  local_0
-        jeq *scriptstr 0 vsNotAlreadyOn
+        jeq *scriptstr, 0, vsNotAlreadyOn
         streamstr scriptingAlreadyOn
         return 0
 
 ;       If we've turned on scripting before, use the same file reference;
 ;       otherwise, prompt the player for a file.
     vsNotAlreadyOn:
-        jeq scriptref 0 vsHaveScriptRef
-        copy fileusageTranscript local_0
-        bitor local_0 fileusageTextMode local_0
-        copy 0 sp
-        copy filemodeWriteAppend sp
-        copy local_0 sp
-        glk glkFilerefCreateByPrompt 3 *scriptref
-        jne *scriptref 0 vsHaveScriptRef
+        jeq scriptref, 0, vsHaveScriptRef
+        copy fileusageTranscript, local_0
+        bitor local_0, fileusageTextMode, local_0
+        copy 0, sp
+        copy filemodeWriteAppend, sp
+        copy local_0, sp
+        glk glkFilerefCreateByPrompt, 3, *scriptref
+        jne *scriptref, 0, vsHaveScriptRef
         streamstr unablePlaceScriptFile
         return 0
 
     vsHaveScriptRef:
 ;       Open the file.
-        copy 0 sp
-        copy filemodeWriteAppend sp
-        copy *scriptref sp
-        glk glkStreamOpenFile 3 *scriptstr
-        jne *scriptstr 0 vsScriptGood
+        copy 0, sp
+        copy filemodeWriteAppend, sp
+        copy *scriptref, sp
+        glk glkStreamOpenFile, 3, *scriptstr
+        jne *scriptstr, 0, vsScriptGood
         streamstr unableWriteScriptFile
         return 0
 
     vsScriptGood:
         streamstr scriptingOnString
-        copy *scriptstr sp
-        copy *mainwin sp
-        glk glkWindowSetEchoStream 2 0
-        copy beginningTranscriptString sp
-        copy *scriptstr sp
-        glk glkPutStringStream 2 0
+        copy *scriptstr, sp
+        copy *mainwin, sp
+        glk glkWindowSetEchoStream, 2, 0
+        copy beginningTranscriptString, sp
+        copy *scriptstr, sp
+        glk glkPutStringStream, 2, 0
         return 0
 
 
@@ -449,8 +449,8 @@ sureWantToQuit: .string "Are you sure you want to quit? "
 thanksPlaying:  .string "Thanks for playing.\n"
 verbQuit: .function
         streamstr sureWantToQuit
-        call yesOrNo 0 sp
-        jne sp 1 vqNotReally
+        call yesOrNo, 0, sp
+        jne sp, 1, vqNotReally
         streamstr thanksPlaying
         quit;
 ;       glk_exit() actually stops the process; it does not return.
@@ -470,35 +470,35 @@ verbQuote: .function
 ;       Open a third window, or clear it if it's already open. Actually,
 ;       since quotewin is closed right after line input, we know it
 ;       can't be open. But better safe, etc.
-        jeq *quotewin 0 verbQuoteOpen
-        copy *quotewin sp
-        glk glkWindowClear 1 0
+        jeq *quotewin, 0, verbQuoteOpen
+        copy *quotewin, sp
+        glk glkWindowClear, 1, 0
         jump verbQuotePrint
 
     verbQuoteOpen:
 ;       A five-line window above the main window, fixed size.
-        copy 0 sp
-        copy wintypeTextBuffer sp
-        copy 3 sp
-        copy winmethodAbove sp
-        bitor sp winmethodFixed sp
-        copy *mainwin sp
-        glk glkWindowOpen 5 *quotewin
-        jne *quotewin 0 verbQuotePrint
+        copy 0, sp
+        copy wintypeTextBuffer, sp
+        copy 3, sp
+        copy winmethodAbove, sp
+        bitor sp, winmethodFixed, sp
+        copy *mainwin, sp
+        glk glkWindowOpen, 5, *quotewin
+        jne *quotewin, 0, verbQuotePrint
 ;       It's possible the quotewin couldn't be opened. In that
 ;       case, just give up.
         return 0
 
     verbQuotePrint:
 ;       Print some quote.
-        copy *quotewin sp
-        glk glkSetWindow 1 0
-        copy styleBlockQuote sp
-        glk glkSetStyle 1 0
+        copy *quotewin, sp
+        glk glkSetWindow, 1, 0
+        copy styleBlockQuote, sp
+        glk glkSetStyle, 1, 0
         streamstr somePoetryString
         streamstr poemCreditString
-        copy *mainwin sp
-        glk glkSetWindow 1 0
+        copy *mainwin, sp
+        glk glkSetWindow, 1, 0
         return 0
 
 
@@ -506,20 +506,20 @@ scriptingAlreadyOff:    .string "Scripting is already off.\n"
 endOfTranscriptString:  .string "This is the end of a transcript.\n\n"
 scriptingOffString:     .string "Scripting off.\n"
 verbUnscript: .function
-        jne *scriptstr 0 vuDoit
+        jne *scriptstr, 0, vuDoit
         streamstr scriptingAlreadyOff
         return 0
 
     vuDoit:
 ;       Close the file.
-        copy endOfTranscriptString sp
-        copy *scriptstr sp
-        glk glkPutStringStream 2 0
-        copy 0 sp
-        copy *scriptstr sp
-        glk glkStreamClose 2 0
+        copy endOfTranscriptString, sp
+        copy *scriptstr, sp
+        glk glkPutStringStream, 2, 0
+        copy 0, sp
+        copy *scriptstr, sp
+        glk glkStreamClose, 2, 0
         streamstr scriptingOffString
-        copy 0 *scriptstr
+        copy 0, *scriptstr
         return 0
 
 unimplementedString:    .string "This has not been implemented yet.\n"
@@ -586,12 +586,12 @@ verbYada: .function
 ; printBuffer buffer
 ; prints a string contained in a buffer (i.e. not a glulx string)
 printBuffer: .function local_0 local_1 local_2
-        copy 0 local_1
+        copy 0, local_1
     printBufferLoop:
-        aloadb local_0 local_1 local_2
-        jeq local_2 0 printBufferDone
+        aloadb local_0, local_1, local_2
+        jeq local_2, 0, printBufferDone
         streamchar local_2
-        add local_1 1 local_1
+        add local_1, 1, local_1
         jump printBufferLoop
     printBufferDone:
         return 0
@@ -600,14 +600,14 @@ printBuffer: .function local_0 local_1 local_2
 ; compare two strings. returns < 0 if the first goes earlier than the second,
 ; > 0 if it goes after, or 0 if they are the same
 stringCompare: .function local_0 local_1 local_2 local_3 local_4
-        copy 0 local_2
+        copy 0, local_2
     compareLoop:
-        aloadb local_0 local_2 local_3
-        aloadb local_1 local_2 local_4
-        jlt local_3 local_4 compareStringLT
-        jgt local_3 local_4 compareStringGT
-        jeq local_3 0  compareStringEqual
-        add local_2 1 local_2
+        aloadb local_0, local_2, local_3
+        aloadb local_1, local_2, local_4
+        jlt local_3, local_4, compareStringLT
+        jgt local_3, local_4, compareStringGT
+        jeq local_3, 0,  compareStringEqual
+        add local_2, 1, local_2
         jump compareLoop
     compareStringLT:
         return -1
@@ -619,11 +619,11 @@ stringCompare: .function local_0 local_1 local_2 local_3 local_4
 ; stringLength buffer
 ; determine the length of a string in bytes
 stringLength: .function local_0 local_1 local_2
-        copy 0 local_1
+        copy 0, local_1
     slLoop:
-        aloadb local_0 local_1 sp
-        jeq sp 0 slFoundLength
-        add local_1 1 local_1
+        aloadb local_0, local_1, sp
+        jeq sp, 0, slFoundLength
+        add local_1, 1, local_1
         jump slLoop
     slFoundLength:
         return local_1
@@ -632,63 +632,63 @@ statusWinSize: .zero 8
 ; drawStatusWindow
 ; draws the content of the status window
 drawStatusWindow: .function local_0 local_1
-        jne *statuswin 0 goodStatusWindow
+        jne *statuswin, 0, goodStatusWindow
 ;       It is possible that the window was not successfully
 ;       created. If that's the case, don't try to draw it.
         return 0
 
     goodStatusWindow:
-        copy *statuswin sp
-        glk glkSetWindow 1 0
-        copy *statuswin sp
-        glk glkWindowClear 1 0
-        copy 0 sp
-        copy statusWinSize sp
-        copy *statuswin sp
-        glk glkWindowGetSize 3 0
+        copy *statuswin, sp
+        glk glkSetWindow, 1, 0
+        copy *statuswin, sp
+        glk glkWindowClear, 1, 0
+        copy 0, sp
+        copy statusWinSize, sp
+        copy *statuswin, sp
+        glk glkWindowGetSize, 3, 0
 
 ;       Get the current room name
-        jne *current_room 0 dswRoomTwo
-        copy roomOneName local_1
+        jne *current_room, 0, dswRoomTwo
+        copy roomOneName, local_1
         jump dswRoomDone
     dswRoomTwo:
-        copy roomTwoName local_1
+        copy roomTwoName, local_1
     dswRoomDone:
 
 ;       Print the room name, centered.
-        copy *statusWinSize local_0
-        copy local_1 sp
-        call stringLength 1 sp
-        sub local_0 sp local_0
-        div local_0 2 local_0
-        copy 1 sp
-        copy local_0 sp
-        copy *statuswin sp
-        glk glkWindowMoveCursor 3 0
+        copy *statusWinSize, local_0
+        copy local_1, sp
+        call stringLength, 1, sp
+        sub local_0, sp, local_0
+        div local_0, 2, local_0
+        copy 1, sp
+        copy local_0, sp
+        copy *statuswin, sp
+        glk glkWindowMoveCursor, 3, 0
         streamstr local_1
 
 ;       Draw a decorative compass rose in the upper right.
-        copy *statusWinSize local_0
-        sub local_0 3 local_0
-        copy 0 sp
-        copy local_0 sp
-        copy *statuswin sp
-        glk glkWindowMoveCursor 3 0
+        copy *statusWinSize, local_0
+        sub local_0, 3, local_0
+        copy 0, sp
+        copy local_0, sp
+        copy *statuswin, sp
+        glk glkWindowMoveCursor, 3, 0
         streamstr compassTopString
-        copy 1 sp
-        copy local_0 sp
-        copy *statuswin sp
-        glk glkWindowMoveCursor 3 0
+        copy 1, sp
+        copy local_0, sp
+        copy *statuswin, sp
+        glk glkWindowMoveCursor, 3, 0
         streamstr compassMiddleString
-        copy 2 sp
-        copy local_0 sp
-        copy *statuswin sp
-        glk glkWindowMoveCursor 3 0
+        copy 2, sp
+        copy local_0, sp
+        copy *statuswin, sp
+        glk glkWindowMoveCursor, 3, 0
         streamstr compassBottomString
 
 ;       all done; set the main window as current again then return
-        copy *mainwin sp
-        glk glkSetWindow 1 0
+        copy *mainwin, sp
+        glk glkSetWindow, 1, 0
         return 0
 
 compassTopString:       .string "\\|/"
@@ -701,46 +701,46 @@ yesOrNoString:      .string "Please enter \"yes\" or \"no\": "
 ; get a yes or no answer from the player. Print the prompt of your choice
 ; before calling this. Will return 1 for yes or 0 for no
 yesOrNo: .function local_0 local_1
-    call drawStatusWindow 0 0
+    call drawStatusWindow, 0, 0
 
 ;       This loop is identical to the main command loop in glk_main().
     yonRestartInputLoop:
-        copy 0 sp
-        copy 255 sp
-        copy commandbuf sp
-        copy *mainwin sp
-        glk glkRequestLineEvent 4  0
+        copy 0, sp
+        copy 255, sp
+        copy commandbuf, sp
+        copy *mainwin, sp
+        glk glkRequestLineEvent, 4,  0
     yonInputLoop:
-        copy event sp
-        glk glkSelect 1 0
-        jeq *event evtypeArrange   yonWindowArrange
-        jeq *event evtypeLineInput yonLineInput
+        copy event, sp
+        glk glkSelect, 1, 0
+        jeq *event, evtypeArrange,   yonWindowArrange
+        jeq *event, evtypeLineInput, yonLineInput
         streamstr unexpectedGLKEvent
         jump yonInputLoop
 
     yonWindowArrange:
         jump yonInputLoop
     yonLineInput:
-        aload event 1 local_0
-        jne local_0 *mainwin yonInputLoop
+        aload event, 1, local_0
+        jne local_0, *mainwin, yonInputLoop
         jump yonGotLine
 
     yonGotLine:
-        aload event 2 local_0
-        astoreb commandbuf local_0 0
-        copy 0 local_0
+        aload event, 2, local_0
+        astoreb commandbuf, local_0, 0
+        copy 0, local_0
     yonLoop:
-        aloadb commandbuf local_0 local_1
-        jeq local_1 0 yonBad
-        jne local_1 32 yonAnswer
-        add local_1 1 local_1
+        aloadb commandbuf, local_0, local_1
+        jeq local_1, 0, yonBad
+        jne local_1, 32, yonAnswer
+        add local_1, 1, local_1
         jump yonLoop
 
     yonAnswer:
-        jeq local_1 'Y' yonYes
-        jeq local_1 'y' yonYes
-        jeq local_1 'N' yonNo
-        jeq local_1 'n' yonNo
+        jeq local_1, 'Y', yonYes
+        jeq local_1, 'y', yonYes
+        jeq local_1, 'N', yonNo
+        jeq local_1, 'n', yonNo
     yonBad:
         streamstr yesOrNoString
         jump yonRestartInputLoop
