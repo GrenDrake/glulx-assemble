@@ -168,6 +168,21 @@ struct token_list* lex_core(struct lexer_state *state) {
             a_token->i = op_shift_left;
             add_token(tokens, a_token);
             next_char(state); in = next_char(state);
+        } else if (in == '|') {
+            a_token = new_token(tt_operator, NULL, state);
+            a_token->i = op_bit_or;
+            add_token(tokens, a_token);
+            next_char(state); in = next_char(state);
+        } else if (in == '^') {
+            a_token = new_token(tt_operator, NULL, state);
+            a_token->i = op_bit_xor;
+            add_token(tokens, a_token);
+            next_char(state); in = next_char(state);
+        } else if (in == '&' && peek_char(state) == '&') {
+            a_token = new_token(tt_operator, NULL, state);
+            a_token->i = op_bit_and;
+            add_token(tokens, a_token);
+            next_char(state); in = next_char(state);
         } else if (in == '&') {
             a_token = new_token(tt_indirect, NULL, state);
             add_token(tokens, a_token);

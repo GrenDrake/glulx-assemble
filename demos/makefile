@@ -1,6 +1,6 @@
 ASSEMBLE=../glulx-assemble
 
-all: minimal.ulx basic.ulx complex.ulx model.ulx mountain.ulx
+all: minimal.ulx basic.ulx complex.ulx model.ulx mountain.ulx expressions.ulx
 
 minimal.ulx: minimal.ga $(ASSEMBLE)
 	$(ASSEMBLE) minimal.ga minimal.ulx
@@ -10,6 +10,9 @@ basic.ulx: basic.ga $(ASSEMBLE)
 
 complex.ulx: complex.ga glk.ga $(ASSEMBLE)
 	$(ASSEMBLE) complex.ga complex.ulx
+
+expressions.ulx: expressions.ga $(ASSEMBLE)
+	$(ASSEMBLE) expressions.ga expressions.ulx
 
 model.ulx: model.ga glk.ga $(ASSEMBLE)
 	$(ASSEMBLE) model.ga model.ulx

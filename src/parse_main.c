@@ -524,78 +524,58 @@ int eval_operand(struct operand *op, struct output_state *output, int report_unk
             }
             return EVAL_UNKNOWN;
         } else {
-            if (op->op_type == op_negate) {
-                if (op->type != ot_constant) {
-                    report_error(&op->origin, "cannot negate non-constant value",
-                        op->name);
-                    return EVAL_INVALID;
-                }
+            if (op->op_type == op_value) {
+                // do nothing in this case
+            } else if (op->type != ot_constant) {
+                report_error(&op->origin, "unary operators may only function on constant values",
+                    op->name);
+                return EVAL_INVALID;
+            } else if (op->op_type == op_negate) {
                 op->value = -op->value;
             }
             return EVAL_KNOWN;
         }
     }
 
-    int r1, r2;
+    int r1 = eval_operand(op->left, output, report_unknown_identifiers);
+    int r2 = eval_operand(op->right, output, report_unknown_identifiers);
+    if (r1 == EVAL_INVALID || r2 == EVAL_INVALID) return EVAL_INVALID;
+    if (r1 == EVAL_UNKNOWN || r2 == EVAL_UNKNOWN) return EVAL_UNKNOWN;
     switch(op->op_type) {
         case op_add:
-            r1 = eval_operand(op->left, output, report_unknown_identifiers);
-            r2 = eval_operand(op->right, output, report_unknown_identifiers);
-            if (r1 == EVAL_INVALID || r2 == EVAL_INVALID) return EVAL_INVALID;
-            if (r1 == EVAL_UNKNOWN || r2 == EVAL_UNKNOWN) return EVAL_UNKNOWN;
-            op->op_type = op_value;
-            op->known_value = TRUE;
             op->value = op->left->value + op->right->value;
-            return EVAL_KNOWN;
+            break;
         case op_subtract:
-            r1 = eval_operand(op->left, output, report_unknown_identifiers);
-            r2 = eval_operand(op->right, output, report_unknown_identifiers);
-            if (r1 == EVAL_INVALID || r2 == EVAL_INVALID) return EVAL_INVALID;
-            if (r1 == EVAL_UNKNOWN || r2 == EVAL_UNKNOWN) return EVAL_UNKNOWN;
-            op->op_type = op_value;
-            op->known_value = TRUE;
             op->value = op->left->value - op->right->value;
-            return EVAL_KNOWN;
+            break;
         case op_multiply:
-            r1 = eval_operand(op->left, output, report_unknown_identifiers);
-            r2 = eval_operand(op->right, output, report_unknown_identifiers);
-            if (r1 == EVAL_INVALID || r2 == EVAL_INVALID) return EVAL_INVALID;
-            if (r1 == EVAL_UNKNOWN || r2 == EVAL_UNKNOWN) return EVAL_UNKNOWN;
-            op->op_type = op_value;
-            op->known_value = TRUE;
             op->value = op->left->value * op->right->value;
-            return EVAL_KNOWN;
+            break;
         case op_divide:
-            r1 = eval_operand(op->left, output, report_unknown_identifiers);
-            r2 = eval_operand(op->right, output, report_unknown_identifiers);
-            if (r1 == EVAL_INVALID || r2 == EVAL_INVALID) return EVAL_INVALID;
-            if (r1 == EVAL_UNKNOWN || r2 == EVAL_UNKNOWN) return EVAL_UNKNOWN;
-            op->op_type = op_value;
-            op->known_value = TRUE;
             op->value = op->left->value / op->right->value;
-            return EVAL_KNOWN;
+            break;
         case op_shift_left:
-            r1 = eval_operand(op->left, output, report_unknown_identifiers);
-            r2 = eval_operand(op->right, output, report_unknown_identifiers);
-            if (r1 == EVAL_INVALID || r2 == EVAL_INVALID) return EVAL_INVALID;
-            if (r1 == EVAL_UNKNOWN || r2 == EVAL_UNKNOWN) return EVAL_UNKNOWN;
-            op->op_type = op_value;
-            op->known_value = TRUE;
             op->value = op->left->value << op->right->value;
-            return EVAL_KNOWN;
+            break;
         case op_shift_right:
-            r1 = eval_operand(op->left, output, report_unknown_identifiers);
-            r2 = eval_operand(op->right, output, report_unknown_identifiers);
-            if (r1 == EVAL_INVALID || r2 == EVAL_INVALID) return EVAL_INVALID;
-            if (r1 == EVAL_UNKNOWN || r2 == EVAL_UNKNOWN) return EVAL_UNKNOWN;
-            op->op_type = op_value;
-            op->known_value = TRUE;
             op->value = op->left->value >> op->right->value;
-            return EVAL_KNOWN;
+            break;
+        case op_bit_and:
+            op->value = op->left->value & op->right->value;
+            break;
+        case op_bit_or:
+            op->value = op->left->value | op->right->value;
+            break;
+        case op_bit_xor:
+            op->value = op->left->value ^ op->right->value;
+            break;
         default:
             report_error(&op->origin, "unhandled operation type");
             return EVAL_INVALID;
     }
+    op->op_type = op_value;
+    op->known_value = TRUE;
+    return EVAL_KNOWN;
 }
 
 

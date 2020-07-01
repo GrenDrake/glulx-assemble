@@ -1,0 +1,112 @@
+; This is a simple glulx assembly program intended to demonstrate the use and
+; available operators for operand expressions
+;
+; Part of glulx-assemble
+; Copyright (C) 2018 Gren Drake
+; Released under the MIT license (see LICENSE.md)
+
+.define ioSysGlk            2
+.define wintypeTextBuffer   3
+.define glkWindowOpen       $23
+.define glkSetWindow        $2F
+
+.stack_size 2048
+.extra_memory 256
+.string_table
+.end_header
+
+mainWindow: .zero 4
+
+setup: .function
+    setiosys ioSysGlk, 0
+
+    copy 0, sp
+    copy wintypeTextBuffer, sp
+    copy 0, sp
+    copy 0, sp
+    copy 0, sp
+    glk $23, 5, &mainWindow
+
+    copy &mainWindow, sp
+    glk glkSetWindow, 1, 0
+    return 0
+
+
+
+strArithmetic:  .encoded "Arithmetic:"
+strPlus:        .encoded "\n10 + 5 = "
+strMinus:       .encoded "\n10 - 5 = "
+strMultiply:    .encoded "\n10 * 5 = "
+strDivide:      .encoded "\n10 / 5 = "
+
+strBitwise:     .encoded "\n\nBitwise:"
+strLeft:        .encoded "\n1 << 3 = "
+strRight:       .encoded "\n1 >> 3 = "
+strAnd:         .encoded "\n1 & 3 = "
+strOr:          .encoded "\n2 | 4 = "
+strXor:         .encoded "\n1 ^ 3 = "
+
+strUnary:       .encoded "\n\nUnary:"
+strUPlus:       .encoded "\n+5 = "
+strUMinus:      .encoded "\n-5 = "
+
+strCompound:    .encoded "\n\nCompound Expressions:"
+strCompound1:   .encoded "\n-5 + -5 = "
+strCompound2:   .encoded "\n5 + 4 * 3 / 2 = "
+
+start: .function
+    call setup, 0, 0
+
+    streamstr strArithmetic
+    streamstr strPlus
+    streamnum 10 + 5
+
+    streamstr strMinus
+    streamnum 10 - 5
+
+    streamstr strMultiply
+    streamnum 10 * 5
+
+    streamstr strDivide
+    streamnum 10 / 5
+
+
+    streamstr strBitwise
+    streamstr strLeft
+    streamnum 1 << 3
+
+    streamstr strRight
+    streamnum 1 >> 3
+
+    streamstr strAnd
+    streamnum 1 && 3 ; the bitwise and operator is && to avoid ambiguity with
+                     ; the indirection operator (&)
+
+    streamstr strOr
+    streamnum 2 | 4
+
+    streamstr strXor
+    streamnum 1 ^ 3
+
+
+    streamstr strUnary
+    streamstr strUPlus
+    streamnum +5
+
+    streamstr strUMinus
+    streamnum -5
+
+
+    streamstr strCompound
+    streamstr strCompound1
+    streamnum -5 + -5
+
+    streamstr strCompound2
+    streamnum 5 + 4 * 3 / 2 ; note that this is NOT currently evaluated
+                            ; according to the standard order of operators
+
+    streamchar '\n'
+    streamchar '\n'
+
+    return 0
+

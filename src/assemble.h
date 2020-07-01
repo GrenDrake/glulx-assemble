@@ -39,6 +39,9 @@ enum operator_type {
     op_negate,
     op_shift_left,
     op_shift_right,
+    op_bit_and,
+    op_bit_or,
+    op_bit_xor,
 };
 
 enum operand_type {
