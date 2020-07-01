@@ -68,6 +68,8 @@ An instruction statement consists of an opcode mnemonic followed by zero or more
 
 As well as being plain values, operands may also consist of simple expressions. While the values used do not need to be defined before the expression is encountered, they must have a known assemble-time value (you can't, for instance, use the contents of a local variable).
 
+While an expression can consist of more than two terms, this is not recommended at this time. The order in which the expression is evaluated is currently undefined and will likely produce unexpected results.
+
 ```
 streamnum A_NUMBER + 1
 .define A_NUMBER 42
