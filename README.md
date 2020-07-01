@@ -1,11 +1,16 @@
 # glulx-assemble
 
-glulx-assemble is an assembler for creating [glulx] program files. It is a re- imagined version of my previous project [GGASM] written using C99. The main intentbehind this program is to serve as a backend that assembles data output by other applications, I have tried to design it in such a way that it can be used to create programs in pure assembly as well.
+glulx-assemble is an assembler for creating [glulx] program files. It is a re-imagined version of my previous project [GGASM]. The main intent behind this program is to serve as a backend for other applications, but I have tried to design it so that it can create programs in pure glulx assembly as well.
 
 
 ## License
 
 glulx-assemble is released under the MIT license. Program files created by glulx-assemble are not covered by this license and may be licensed as the copyright holder desires.
+
+
+## Building
+
+glulx-assemble is written using standard C99 code and does not depend on any other libraries. It should be possible to build it using any standard C99 compiler.
 
 
 ## Usage
@@ -31,14 +36,9 @@ glulx-assemble -dump_tokens basic.ga basic.ulx
 ```
 
 
-## Building glulx-assemble
-
-glulx-assemble is written in standard C99; it should be possible to compile it with any compliant compiler. It is packaged using a simple makefile for building. There are no external dependencies.
-
-
 ## Source Files
 
-Source files are text files with the ".ga" extension. The assembler expects them to be encoded using UTF-8. Some sample source files can be found in the demos directory; [basic.ga] provides a "hello world" style example. As a special case, the filename can be given as "-" (without the quotes) to read the source file from stdin.
+Source files are text files encoded in UTF-8 with the ".ga" extension. Some sample source files are in the demos directory; [basic.ga] provides a "hello world" style example. As a special case, the filename can be given as "-" (without the quotes) to read the source file from stdin.
 
 A source file is a sequence of one-line statements that the assembler uses to create a glulx program file. Each line can begin with a label consisting of an identifier followed by a colon (`the_label_name:`). This is followed by the statement for that line.  A source line may also contain a comment; comments begin with a semicolon (`;`) and continue until the end of the line. All of these elements are optional and a source-line may contain all, some, or none of them. An example of a source line containing all three elements is included below:
 
@@ -63,6 +63,17 @@ An instruction statement consists of an opcode mnemonic followed by zero or more
 | Label name             | `start_loop` |                                                                                |
 | Local variable name    | `index`      | The name of a local variable declared in the last encountered function header. |
 | Named constant         | `MAX_LENGTH` | Created with the `.define` directive.                                          |
+
+#### Operand Expressions
+
+As well as being plain values, operands may also consist of simple expressions. While the values used do not need to be defined before the expression is encountered, they must have a known assemble-time value (you can't, for instance, use the contents of a local variable).
+
+```
+streamnum A_NUMBER + 1
+.define A_NUMBER 42
+```
+
+#### Custom Opcodes
 
 There is also a special mnemonic `opcode` which allows the use of custom opcodes not known to the assembler. The word `opcode` may be immediately followed by `rel` to indicate that the last operand should be treated as a relative value akin to the jump directives in glulx. Next is the opcode number (or constant defined with the opcode number) followed by all the operands as normal.
 
