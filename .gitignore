@@ -7,3 +7,7 @@ test_*
 # glulx gamefiles and debugging output
 *.ulx
 out_*.txt
+
+# Ignore OS and editor files
+.vscode
+.DS_Store
