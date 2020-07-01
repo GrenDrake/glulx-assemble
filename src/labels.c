@@ -73,16 +73,9 @@ void dump_patches(FILE *dest, struct program_info *info) {
     if (patch == NULL) fprintf(dest, "No backpatches found!\n");
 
     while (patch) {
-        fprintf(dest, "%-30s  0x%08X = %d (",
-                patch->name, patch->position,
+        fprintf(dest, "0x%08X = %d\n",
+                patch->position,
                 patch->value_final);
-
-        struct label_def *label = get_label(info->first_label, patch->name);
-        if (label) {
-            fprintf(dest, "%d)\n", label->pos);
-        } else {
-            fprintf(dest, "-)\n");
-        }
 
         patch = patch->next;
     }
@@ -92,7 +85,7 @@ void free_patches(struct backpatch *first) {
     struct backpatch *cur = first;
     while (cur) {
         struct backpatch *next = cur->next;
-        free(cur->name);
+        free_operands(cur->operand_chain);
         free(cur);
         cur = next;
     }

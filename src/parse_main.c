@@ -34,9 +34,28 @@ struct operand* parse_operand(struct token **from, struct output_state *output);
 struct operand* parse_unary_operand(struct token **from, struct output_state *output);
 struct operand* parse_operand_expr(struct token **from, struct output_state *output);
 int eval_operand(struct operand *op, struct output_state *output, int report_unknown_identifiers);
-static void free_operands(struct operand *first_operand);
 static int operand_size(const struct operand *op);
 
+
+struct operand* new_operand() {
+    struct operand *o = calloc(sizeof(struct operand), 1);
+    if (!o) return NULL;
+    o->type = ot_constant;
+    o->op_type = op_value;
+    return o;
+}
+
+void free_operands(struct operand *first_operand) {
+    while (first_operand) {
+        struct operand *next = first_operand->next;
+        if (!first_operand->dont_free) {
+            // free(first_operand);
+        } else {
+            first_operand->next = NULL;
+        }
+        first_operand = next;
+    }
+}
 
 /* ************************************************************************** *
  * BINARY OUTPUT FUNCTIONS                                                    *
@@ -222,7 +241,7 @@ static int parse_bytes(struct token *first, struct output_state *output, int wid
                 struct backpatch *patch = malloc(sizeof(struct backpatch));
                 patch->next = 0;
                 patch->max_width = width;
-                patch->name = str_dup(operand->name);
+                copy_origin(&patch->origin, &op_start->origin);
                 patch->position = output->code_position;
                 patch->position_after = 0;
                 patch->operand_chain = operand;
@@ -392,6 +411,7 @@ struct operand* parse_operand(struct token **from, struct output_state *output) 
             free(op);
             return NULL;
         }
+        op->type = the_type;
     }
 
     *from = here;
@@ -414,11 +434,11 @@ struct operand* parse_unary_operand(struct token **from, struct output_state *ou
         }
     }
 
-    struct operand *op = malloc(sizeof(struct operand));
+    struct operand *op = new_operand();
     op->dont_free = FALSE;
     op->type = ot_constant;
     op->origin = here->origin;
-    op->op_type = op_value;
+    op->op_type = op_type;
     op->next = NULL;
     op->name = NULL;
     op->known_value = FALSE;
@@ -449,7 +469,27 @@ struct operand* parse_unary_operand(struct token **from, struct output_state *ou
 
 struct operand* parse_operand_expr(struct token **from, struct output_state *output) {
     struct operand *left = parse_unary_operand(from, output);
-    return left;
+    struct token *here = *from;
+    if (here && here->type == tt_operator) {
+        enum operator_type op_type = here->i;
+        struct origin *origin = &here->origin;
+        here = here->next;
+        struct operand *right = parse_operand_expr(&here, output);
+        if (!right) {
+            free_operands(left);
+            return NULL;
+        }
+        *from = here;
+
+        struct operand *op = new_operand();
+        copy_origin(&op->origin, origin);
+        op->op_type = op_type;
+        op->left = left;
+        op->right = right;
+        return op;
+    } else {
+        return left;
+    }
 }
 
 int eval_operand(struct operand *op, struct output_state *output, int report_unknown_identifiers) {
@@ -496,22 +536,50 @@ int eval_operand(struct operand *op, struct output_state *output, int report_unk
         }
     }
 
-    report_error(&op->origin, "unhandled operation type");
-    return EVAL_INVALID;
-}
-
-
-static void free_operands(struct operand *first_operand) {
-    while (first_operand) {
-        struct operand *next = first_operand->next;
-        if (!first_operand->dont_free) {
-            free(first_operand);
-        } else {
-            first_operand->next = NULL;
-        }
-        first_operand = next;
+    int r1, r2;
+    switch(op->op_type) {
+        case op_add:
+            r1 = eval_operand(op->left, output, report_unknown_identifiers);
+            r2 = eval_operand(op->right, output, report_unknown_identifiers);
+            if (r1 == EVAL_INVALID || r2 == EVAL_INVALID) return EVAL_INVALID;
+            if (r1 == EVAL_UNKNOWN || r2 == EVAL_UNKNOWN) return EVAL_UNKNOWN;
+            op->op_type = op_value;
+            op->known_value = TRUE;
+            op->value = op->left->value + op->right->value;
+            return EVAL_KNOWN;
+        case op_subtract:
+            r1 = eval_operand(op->left, output, report_unknown_identifiers);
+            r2 = eval_operand(op->right, output, report_unknown_identifiers);
+            if (r1 == EVAL_INVALID || r2 == EVAL_INVALID) return EVAL_INVALID;
+            if (r1 == EVAL_UNKNOWN || r2 == EVAL_UNKNOWN) return EVAL_UNKNOWN;
+            op->op_type = op_value;
+            op->known_value = TRUE;
+            op->value = op->left->value - op->right->value;
+            return EVAL_KNOWN;
+        case op_multiply:
+            r1 = eval_operand(op->left, output, report_unknown_identifiers);
+            r2 = eval_operand(op->right, output, report_unknown_identifiers);
+            if (r1 == EVAL_INVALID || r2 == EVAL_INVALID) return EVAL_INVALID;
+            if (r1 == EVAL_UNKNOWN || r2 == EVAL_UNKNOWN) return EVAL_UNKNOWN;
+            op->op_type = op_value;
+            op->known_value = TRUE;
+            op->value = op->left->value * op->right->value;
+            return EVAL_KNOWN;
+        case op_divide:
+            r1 = eval_operand(op->left, output, report_unknown_identifiers);
+            r2 = eval_operand(op->right, output, report_unknown_identifiers);
+            if (r1 == EVAL_INVALID || r2 == EVAL_INVALID) return EVAL_INVALID;
+            if (r1 == EVAL_UNKNOWN || r2 == EVAL_UNKNOWN) return EVAL_UNKNOWN;
+            op->op_type = op_value;
+            op->known_value = TRUE;
+            op->value = op->left->value / op->right->value;
+            return EVAL_KNOWN;
+        default:
+            report_error(&op->origin, "unhandled operation type");
+            return EVAL_INVALID;
     }
 }
+
 
 static int operand_size(const struct operand *op) {
     if (!op->known_value || op->force_4byte) {
@@ -983,7 +1051,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
                 struct backpatch *patch = malloc(sizeof(struct backpatch));
                 patch->next = 0;
                 patch->max_width = 4;
-                patch->name = str_dup(cur_op->name);
+                copy_origin(&patch->origin, &cur_op->origin);
                 patch->position = output.code_position;
                 patch->position_after = after_pos;
                 patch->operand_chain = cur_op;
@@ -1083,9 +1151,8 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
 
             fseek(out, patch->position, SEEK_SET);
             if (!value_fits(patch->value_final, patch->max_width)) {
-                report_error(&objectfile_origin,
-                        "(warning) value of ~%s~ is larger than storage specification and will be truncated\n",
-                        patch->name);
+                report_error(&patch->origin,
+                        "(warning) value is larger than storage specification and will be truncated\n");
             }
             write_variable(&output, patch->value_final, patch->max_width);
         } else {

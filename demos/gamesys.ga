@@ -339,9 +339,9 @@ setupGlk: .function
     copy 0, sp
     copy 0, sp
     copy 0, sp
-    glk $23, 5, *mainWindow
+    glk $23, 5, &mainWindow
 
-    copy *mainWindow, sp
+    copy &mainWindow, sp
     glk glkSetWindow, 1, 0
     return TRUE
 
@@ -404,15 +404,15 @@ start: .function local_0 local_1 local_2
         copy 0, sp
         copy 255, sp
         copy commandbuf, sp
-        copy *mainWindow, sp
+        copy &mainWindow, sp
         glk glkRequestLineEvent, 4, 0
 
     start_inputLoop:
         copy event, sp
         glk glkSelect, 1, 0
 
-        jeq *event, evtypeArrange,   start_evWindowArrange
-        jeq *event, evtypeLineInput, start_evLineInput
+        jeq &event, evtypeArrange,   start_evWindowArrange
+        jeq &event, evtypeLineInput, start_evLineInput
         streamstr unexpectedEventString
         jump start_inputLoop
 
@@ -420,7 +420,7 @@ start: .function local_0 local_1 local_2
         jump start_inputLoop
     start_evLineInput:
         aload event, 1, local_0
-        jne local_0, *mainWindow, start_inputLoop
+        jne local_0, &mainWindow, start_inputLoop
 
 ;       commandbuf now contains a line of input from the main window.
 ;       The line we have received in commandbuf is not null-terminated.
@@ -442,8 +442,8 @@ start: .function local_0 local_1 local_2
     start_endCaseLoop:
 
 ; find and isolate the first two words of input
-        copy 0, *firstWord
-        copy 0, *secondWord
+        copy 0, &firstWord
+        copy 0, &secondWord
         copy 0, local_0
     start_findStartOfFirstWord:
         aloadb commandbuf, local_0, local_1
@@ -452,7 +452,7 @@ start: .function local_0 local_1 local_2
         add local_0, 1, local_0
         jump start_findStartOfFirstWord           ; otherwise skip the space
     start_foundStartOfFirstWord:
-        add local_0, commandbuf, *firstWord
+        add local_0, commandbuf, &firstWord
     start_findEndOfFirstWord:
         add local_0, 1, local_0
         aloadb commandbuf, local_0, local_1
@@ -470,7 +470,7 @@ start: .function local_0 local_1 local_2
         add local_0, 1, local_0
         jump start_findStartOfSecondWord
     start_foundStartOfSecondWord:
-        add local_0, commandbuf, *secondWord
+        add local_0, commandbuf, &secondWord
     start_findEndOfSecondWord:
         add local_0, 1, local_0
         aloadb commandbuf, local_0, local_1
@@ -482,12 +482,12 @@ start: .function local_0 local_1 local_2
         jump start_endOfCommandString
 
     start_endOfCommandString:
-        jeq *firstWord, 0, start_emptyVerb
+        jeq &firstWord, 0, start_emptyVerb
         copy vocabTable, local_0
     start_verbSearchLoop:
         aload local_0, 0, local_1
         jeq local_1, 0, start_badVerb
-        callfii strcmp, *firstWord, local_1, local_2
+        callfii strcmp, &firstWord, local_1, local_2
         jeq local_2, 0, start_foundVerb
         add local_0, VOCAB_ENTRY_SIZE, local_0
         jump start_verbSearchLoop
@@ -497,7 +497,7 @@ start: .function local_0 local_1 local_2
         jump start_mainLoopBegin
     start_badVerb:
         streamstr unknownCommandString
-        callfi printCString, *firstWord, 0
+        callfi printCString, &firstWord, 0
         streamstr unknownCommandEndString
         jump start_mainLoopBegin
     start_tooManyWords:
@@ -505,26 +505,26 @@ start: .function local_0 local_1 local_2
         jump start_mainLoopBegin
 
     start_foundVerb:
-        copy 0, *theNoun
+        copy 0, &theNoun
         aload local_0, 2, local_1
         jeq local_1, VERB_EITHER, start_commandGood
         jeq local_1, VERB_ONEWORD, start_oneWordCommand
-        jnz *secondWord, start_commandGood
+        jnz &secondWord, start_commandGood
         streamstr twoWordString
         jump start_mainLoopBegin
     start_oneWordCommand:
-        jz *secondWord, start_commandGood
+        jz &secondWord, start_commandGood
         streamstr oneWordString
         jump start_mainLoopBegin
 
     start_commandGood:
         aload local_0, 1, local_0
-        jz *secondWord, start_skipFindNoun
-        callfii strcmp, *secondWord, itWord, sp
+        jz &secondWord, start_skipFindNoun
+        callfii strcmp, &secondWord, itWord, sp
         jz sp, start_handleIt
-        callfii objectForVocab, *secondWord, *location, *theNoun
-        jz *theNoun, start_skipFindNoun
-        callfii getProperty, *theNoun, PROP_BEFORE, local_2
+        callfii objectForVocab, &secondWord, &location, &theNoun
+        jz &theNoun, start_skipFindNoun
+        callfii getProperty, &theNoun, PROP_BEFORE, local_2
         jz local_2, start_skipFindNoun
     start_findBeforeLoop:
         aload local_2, 0, local_1
@@ -535,8 +535,8 @@ start: .function local_0 local_1 local_2
 
         noItWordString: .string "\"It\" currently does not refer to anything.\n"
     start_handleIt:
-        jz *itNoun, start_noItWord
-        copy *itNoun, *theNoun
+        jz &itNoun, start_noItWord
+        copy &itNoun, &theNoun
         jump start_skipFindNoun
     start_noItWord:
         streamstr noItWordString
@@ -546,8 +546,8 @@ start: .function local_0 local_1 local_2
         callf local_1, sp
         jnz sp, start_mainLoopBegin
     start_skipFindNoun:
-        jz *theNoun, start_dontSetIt
-        copy *theNoun, *itNoun
+        jz &theNoun, start_dontSetIt
+        copy &theNoun, &itNoun
     start_dontSetIt:
         callf local_0, 0
         jump start_mainLoopBegin
@@ -558,11 +558,11 @@ start: .function local_0 local_1 local_2
 droppedString:          .encoded "Dropped.\n";
 notHoldingThatString:   .encoded "You aren't holding that.\n"
 verbDrop: .function
-        jz *theNoun, verbDrop_notHolding
-        callfii objectContains, player, *theNoun, sp
+        jz &theNoun, verbDrop_notHolding
+        callfii objectContains, player, &theNoun, sp
         jz sp, verbDrop_notHolding
         aload player, OBJ_PARENT, sp
-        callfii objectMove, *theNoun, *location, 0
+        callfii objectMove, &theNoun, &location, 0
         streamstr droppedString
         return 0
     verbDrop_notHolding:
@@ -577,16 +577,16 @@ verbGo: .function       curDir dirWord target
     verbGo_loop:
         aload curDir, 0, dirWord
         jz dirWord, verbGo_badDir
-        callfii strcmp, *secondWord, dirWord, sp
+        callfii strcmp, &secondWord, dirWord, sp
         jz sp, verbGo_foundDir
         add curDir, DIRECTION_ENTRY_SIZE, curDir
         jump verbGo_loop
 
     verbGo_foundDir:
         aload curDir, 1, curDir
-        callfii getProperty, *location, curDir, target
+        callfii getProperty, &location, curDir, target
         jz target, verbGo_cantGo
-        copy target, *location
+        copy target, &location
         callfii objectMove, player, target, 0
         callf verbLookAround, 0
         return 0
@@ -620,12 +620,12 @@ verbInventory: .function        curChild
 cantSeeThatString:      .encoded "You can't see that here.\n"
 nothingSpecialString:   .encoded "You see nothing special about that.\n"
 verbLook: .function     tmp
-        jnz *secondWord, verbLook_at
+        jnz &secondWord, verbLook_at
         callf verbLookAround, 0
         return 0;
     verbLook_at:
-        jz *theNoun, verbLook_cantSee
-        callfii getProperty, *theNoun, PROP_DESCRIPTION, tmp
+        jz &theNoun, verbLook_cantSee
+        callfii getProperty, &theNoun, PROP_DESCRIPTION, tmp
         jz tmp, verbLook_nodesc
         streamstr tmp
         streamchar 10
@@ -640,26 +640,26 @@ verbLook: .function     tmp
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-preNameString:          .encoded "* "
-postNameString:         .encoded " *\n"
+preNameString:          .encoded "& "
+postNameString:         .encoded " &\n"
 youCanSeeString:        .encoded "\nYou can see here: "
-nowhereLocationString:  .encoded "* Nowhere *\nYou are nowhere!\n"
+nowhereLocationString:  .encoded "& Nowhere &\nYou are nowhere!\n"
 endObjListString:       .encoded ".\n"
 verbLookAround: .function       curChild tmp
-        jz *location, verbLook_nowhere
+        jz &location, verbLook_nowhere
         streamstr preNameString
         copy styleSubheader, sp
         glk glkSetStyle, 1, 0
-        callfi printObject, *location, 0
+        callfi printObject, &location, 0
         copy styleNormal, sp
         glk glkSetStyle, 1, 0
         streamstr postNameString
-        callfii getProperty, *location, PROP_DESCRIPTION, tmp
+        callfii getProperty, &location, PROP_DESCRIPTION, tmp
         jz tmp, verbLookAround_nodesc
         streamstr tmp
         streamchar 10
     verbLookAround_nodesc:
-        callfi getUnconcealedChild, *location, curChild
+        callfi getUnconcealedChild, &location, curChild
         jz curChild, verbLookAround_done
         streamstr youCanSeeString
         callfi objectListFrom, curChild, 0
@@ -681,13 +681,13 @@ cantTakeSelfString:         .encoded "Can't take yourself.\n"
 cantTakeThatString:         .encoded "Can't take that.\n"
 alreadyHoldingThatString:   .encoded "Already holding that.\n"
 verbTake: .function
-        jz *theNoun, verbTake_cantSee
-        jeq *theNoun, player, verbTake_cantTakeSelf
-        callfii objectHasFlag, *theNoun, OF_STATIC, sp
+        jz &theNoun, verbTake_cantSee
+        jeq &theNoun, player, verbTake_cantTakeSelf
+        callfii objectHasFlag, &theNoun, OF_STATIC, sp
         jnz sp, verbTake_cantTakeThat
-        callfii objectContains, player, *theNoun, sp
+        callfii objectContains, player, &theNoun, sp
         jnz sp, verbTake_alreadyHolding
-        callfii objectMove, *theNoun, player, 0
+        callfii objectMove, &theNoun, player, 0
         streamstr takenString
         return 0
     verbTake_alreadyHolding:

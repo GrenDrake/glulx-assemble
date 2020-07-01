@@ -106,7 +106,7 @@ struct token_list {
 };
 
 struct backpatch {
-    char *name;
+    struct origin origin;
     int position;
     int position_after;
     int value_final;
@@ -234,6 +234,9 @@ int matches_text(struct token *token, enum token_type type, const char *text);
 
 int parse_preprocess(struct token_list *tokens, struct program_info *info);
 int parse_tokens(struct token_list *list, struct program_info *info);
+
+void free_operands(struct operand *first_operand);
+struct operand* new_operand();
 
 extern struct mnemonic codes[];
 

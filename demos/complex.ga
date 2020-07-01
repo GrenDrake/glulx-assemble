@@ -26,10 +26,10 @@ setup: .function
     copy 0, sp
     copy 0, sp
     copy 0, sp
-    glk glkWindowOpen, 5, *mainWindow
+    glk glkWindowOpen, 5, &mainWindow
 	; in this case there are no paramaters so we're just using the actual glk
 	; opcode
-    copy *mainWindow, sp
+    copy &mainWindow, sp
     glk glkSetWindow, 1, 0
 	; all done; return
     return 0
@@ -153,9 +153,9 @@ start: .function local_0 local_1 local_2
 endverify:
 
 	; copy the address of "testUnicodeString" into the space at the address of
-	; strloc - the * indicates the opcode should act on the contents of the
+	; strloc - the & indicates the opcode should act on the contents of the
 	; address rather than the address itself
-    copy testUnicodeString, *strloc
+    copy testUnicodeString, &strloc
 	; print the string at the address "theBigString"
     streamstr theBigString
 
@@ -171,7 +171,7 @@ endverify:
     streamchar '\n'
 
 	; output the string located at the address contained at the address strloc
-    streamstr *strloc
+    streamstr &strloc
     streamchar '\n'
 
 	; display the contents of the raw binary file we included using a loop

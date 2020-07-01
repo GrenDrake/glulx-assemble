@@ -81,15 +81,15 @@ start: .function local_0 local_1 local_2
         copy 0, sp
         copy 0, sp
         copy 0, sp
-        glk glkWindowOpen, 5, *mainwin
-        jne *mainwin, 0, windowOpened
+        glk glkWindowOpen, 5, &mainwin
+        jne &mainwin, 0, windowOpened
         ; It's possible that the main window failed to open. There's
         ; nothing we can do without it, so exit.
         quit
 
     windowOpened:
         ; Set the current output stream to print to it.
-        copy *mainwin, sp
+        copy &mainwin, sp
         glk glkSetWindow, 1, 0
 
         ; Open a second window: a text grid, above the main window, three lines
@@ -99,27 +99,27 @@ start: .function local_0 local_1 local_2
         copy 3, sp
         copy winmethodAbove, sp
         bitor sp, winmethodFixed, sp
-        copy *mainwin, sp
-        glk glkWindowOpen, 5, *statuswin
+        copy &mainwin, sp
+        glk glkWindowOpen, 5, &statuswin
 
         ; The third window, quotewin, isn't opened immediately. We'll do
         ; that in verb_quote().
 
         streamstr versionString
 
-        copy 0, *current_room ; set initial location.
-        copy 1, *need_look
+        copy 0, &current_room ; set initial location.
+        copy 1, &need_look
 
 
 
     mainLoopBegin:
         callf drawStatusWindow, 0
 
-        jne *need_look, 1, skipLook
+        jne &need_look, 1, skipLook
         streamchar '\n'
         copy styleSubheader, sp
         glk glkSetStyle, 1, 0
-        jne *current_room, 0, otherRoom
+        jne &current_room, 0, otherRoom
         streamstr roomOneName
         streamchar 10
         jump doneName
@@ -135,28 +135,28 @@ start: .function local_0 local_1 local_2
         streamstr promptString;
         ; We request up to 255 characters. The buffer can hold 256, but we
         ; are going to stick a null character at the end, so we have to
-        ; leave room for that. Note that the Glk library does *not*
+        ; leave room for that. Note that the Glk library does &not&
         ; put on that null character.
         mzero 32, commandbuf
         copy 0, sp
         copy 255, sp
         copy commandbuf, sp
-        copy *mainwin, sp
+        copy &mainwin, sp
         glk glkRequestLineEvent, 4, 0
 
     inputLoop:
         copy event, sp
         glk glkSelect, 1, 0
 
-        jeq *event, evtypeArrange,   evWindowArrange
-        jeq *event, evtypeLineInput, evLineInput
+        jeq &event, evtypeArrange,   evWindowArrange
+        jeq &event, evtypeLineInput, evLineInput
         streamstr unexpectedEventString
         jump inputLoop
 
     evWindowArrange:
         jump inputLoop
     evLineInput:
-;       Really the event can *only* be from mainwin,
+;       Really the event can &only& be from mainwin,
 ;       because we never request line input from the
 ;       status window. But we do a paranoia test,
 ;       because commandbuf is only filled if the line
@@ -164,7 +164,7 @@ start: .function local_0 local_1 local_2
 ;       line event comes from anywhere else, we ignore
 ;       it.
         aload event, 1, local_0
-        jne local_0, *mainwin, inputLoop
+        jne local_0, &mainwin, inputLoop
         jump gotLine
 
 
@@ -175,11 +175,11 @@ start: .function local_0 local_1 local_2
 ;       First, if there's a blockquote window open, let's close it.
 ;       This ensures that quotes remain visible for exactly one
 ;       command.
-        jeq *quotewin, 0, skipCloseQuoteWindow
+        jeq &quotewin, 0, skipCloseQuoteWindow
         copy 0, sp
-        copy *quotewin, sp
+        copy &quotewin, sp
         glk glkWindowClose, 2, 0
-        copy 0, *quotewin
+        copy 0, &quotewin
     skipCloseQuoteWindow:
 
 ;       The line we have received in commandbuf is not null-terminated.
@@ -287,12 +287,12 @@ verbJump: .function
 
 
 verbMove: .function
-        copy 1, *need_look
-        jeq *current_room, 0, verbMoveBack
-        copy 0, *current_room
+        copy 1, &need_look
+        jeq &current_room, 0, verbMoveBack
+        copy 0, &current_room
         return 0
     verbMoveBack:
-        copy 1, *current_room
+        copy 1, &current_room
         return 0
 
 
@@ -406,7 +406,7 @@ unableWriteScriptFile:      .string "Unable to write to script file.\n"
 scriptingOnString:          .string "Scripting on.\n"
 beginningTranscriptString:  .string "This is the beginning of a transcript.\n"
 verbScript: .function  local_0
-        jeq *scriptstr, 0, vsNotAlreadyOn
+        jeq &scriptstr, 0, vsNotAlreadyOn
         streamstr scriptingAlreadyOn
         return 0
 
@@ -419,8 +419,8 @@ verbScript: .function  local_0
         copy 0, sp
         copy filemodeWriteAppend, sp
         copy local_0, sp
-        glk glkFilerefCreateByPrompt, 3, *scriptref
-        jne *scriptref, 0, vsHaveScriptRef
+        glk glkFilerefCreateByPrompt, 3, &scriptref
+        jne &scriptref, 0, vsHaveScriptRef
         streamstr unablePlaceScriptFile
         return 0
 
@@ -428,19 +428,19 @@ verbScript: .function  local_0
 ;       Open the file.
         copy 0, sp
         copy filemodeWriteAppend, sp
-        copy *scriptref, sp
-        glk glkStreamOpenFile, 3, *scriptstr
-        jne *scriptstr, 0, vsScriptGood
+        copy &scriptref, sp
+        glk glkStreamOpenFile, 3, &scriptstr
+        jne &scriptstr, 0, vsScriptGood
         streamstr unableWriteScriptFile
         return 0
 
     vsScriptGood:
         streamstr scriptingOnString
-        copy *scriptstr, sp
-        copy *mainwin, sp
+        copy &scriptstr, sp
+        copy &mainwin, sp
         glk glkWindowSetEchoStream, 2, 0
         copy beginningTranscriptString, sp
-        copy *scriptstr, sp
+        copy &scriptstr, sp
         glk glkPutStringStream, 2, 0
         return 0
 
@@ -470,8 +470,8 @@ verbQuote: .function
 ;       Open a third window, or clear it if it's already open. Actually,
 ;       since quotewin is closed right after line input, we know it
 ;       can't be open. But better safe, etc.
-        jeq *quotewin, 0, verbQuoteOpen
-        copy *quotewin, sp
+        jeq &quotewin, 0, verbQuoteOpen
+        copy &quotewin, sp
         glk glkWindowClear, 1, 0
         jump verbQuotePrint
 
@@ -482,22 +482,22 @@ verbQuote: .function
         copy 3, sp
         copy winmethodAbove, sp
         bitor sp, winmethodFixed, sp
-        copy *mainwin, sp
-        glk glkWindowOpen, 5, *quotewin
-        jne *quotewin, 0, verbQuotePrint
+        copy &mainwin, sp
+        glk glkWindowOpen, 5, &quotewin
+        jne &quotewin, 0, verbQuotePrint
 ;       It's possible the quotewin couldn't be opened. In that
 ;       case, just give up.
         return 0
 
     verbQuotePrint:
 ;       Print some quote.
-        copy *quotewin, sp
+        copy &quotewin, sp
         glk glkSetWindow, 1, 0
         copy styleBlockQuote, sp
         glk glkSetStyle, 1, 0
         streamstr somePoetryString
         streamstr poemCreditString
-        copy *mainwin, sp
+        copy &mainwin, sp
         glk glkSetWindow, 1, 0
         return 0
 
@@ -506,20 +506,20 @@ scriptingAlreadyOff:    .string "Scripting is already off.\n"
 endOfTranscriptString:  .string "This is the end of a transcript.\n\n"
 scriptingOffString:     .string "Scripting off.\n"
 verbUnscript: .function
-        jne *scriptstr, 0, vuDoit
+        jne &scriptstr, 0, vuDoit
         streamstr scriptingAlreadyOff
         return 0
 
     vuDoit:
 ;       Close the file.
         copy endOfTranscriptString, sp
-        copy *scriptstr, sp
+        copy &scriptstr, sp
         glk glkPutStringStream, 2, 0
         copy 0, sp
-        copy *scriptstr, sp
+        copy &scriptstr, sp
         glk glkStreamClose, 2, 0
         streamstr scriptingOffString
-        copy 0, *scriptstr
+        copy 0, &scriptstr
         return 0
 
 unimplementedString:    .string "This has not been implemented yet.\n"
@@ -529,14 +529,14 @@ verbYada: .function
 
 ; static void verb_yada(void)
 ; {
-;     /* This is a goofy (and overly ornate) way to print a long paragraph.
-;         It just shows off line wrapping in the Glk implementation. */
+;     /& This is a goofy (and overly ornate) way to print a long paragraph.
+;         It just shows off line wrapping in the Glk implementation. &/
 ;     local_define NUMWORDS (13)
-;     static char *wordcaplist[NUMWORDS] = {
+;     static char &wordcaplist[NUMWORDS] = {
 ;         "Ga", "Bo", "Wa", "Mu", "Bi", "Fo", "Za", "Mo", "Ra", "Po",
 ;             "Ha", "Ni", "Na"
 ;     };
-;     static char *wordlist[NUMWORDS] = {
+;     static char &wordlist[NUMWORDS] = {
 ;         "figgle", "wob", "shim", "fleb", "moobosh", "fonk", "wabble",
 ;             "gazoon", "ting", "floo", "zonk", "loof", "lob",
 ;     };
@@ -632,23 +632,23 @@ statusWinSize: .zero 8
 ; drawStatusWindow
 ; draws the content of the status window
 drawStatusWindow: .function local_0 local_1
-        jne *statuswin, 0, goodStatusWindow
+        jne &statuswin, 0, goodStatusWindow
 ;       It is possible that the window was not successfully
 ;       created. If that's the case, don't try to draw it.
         return 0
 
     goodStatusWindow:
-        copy *statuswin, sp
+        copy &statuswin, sp
         glk glkSetWindow, 1, 0
-        copy *statuswin, sp
+        copy &statuswin, sp
         glk glkWindowClear, 1, 0
         copy 0, sp
         copy statusWinSize, sp
-        copy *statuswin, sp
+        copy &statuswin, sp
         glk glkWindowGetSize, 3, 0
 
 ;       Get the current room name
-        jne *current_room, 0, dswRoomTwo
+        jne &current_room, 0, dswRoomTwo
         copy roomOneName, local_1
         jump dswRoomDone
     dswRoomTwo:
@@ -656,43 +656,43 @@ drawStatusWindow: .function local_0 local_1
     dswRoomDone:
 
 ;       Print the room name, centered.
-        copy *statusWinSize, local_0
+        copy &statusWinSize, local_0
         copy local_1, sp
         call stringLength, 1, sp
         sub local_0, sp, local_0
         div local_0, 2, local_0
         copy 1, sp
         copy local_0, sp
-        copy *statuswin, sp
+        copy &statuswin, sp
         glk glkWindowMoveCursor, 3, 0
         streamstr local_1
 
 ;       Draw a decorative compass rose in the upper right.
-        copy *statusWinSize, local_0
+        copy &statusWinSize, local_0
         sub local_0, 3, local_0
         copy 0, sp
         copy local_0, sp
-        copy *statuswin, sp
+        copy &statuswin, sp
         glk glkWindowMoveCursor, 3, 0
         streamstr compassTopString
         copy 1, sp
         copy local_0, sp
-        copy *statuswin, sp
+        copy &statuswin, sp
         glk glkWindowMoveCursor, 3, 0
         streamstr compassMiddleString
         copy 2, sp
         copy local_0, sp
-        copy *statuswin, sp
+        copy &statuswin, sp
         glk glkWindowMoveCursor, 3, 0
         streamstr compassBottomString
 
 ;       all done; set the main window as current again then return
-        copy *mainwin, sp
+        copy &mainwin, sp
         glk glkSetWindow, 1, 0
         return 0
 
 compassTopString:       .string "\\|/"
-compassMiddleString:    .string "-*-"
+compassMiddleString:    .string "-&-"
 compassBottomString:    .string"/|\\"
 
 unexpectedGLKEvent: .string "Received unexpected GLK event"
@@ -708,13 +708,13 @@ yesOrNo: .function local_0 local_1
         copy 0, sp
         copy 255, sp
         copy commandbuf, sp
-        copy *mainwin, sp
+        copy &mainwin, sp
         glk glkRequestLineEvent, 4,  0
     yonInputLoop:
         copy event, sp
         glk glkSelect, 1, 0
-        jeq *event, evtypeArrange,   yonWindowArrange
-        jeq *event, evtypeLineInput, yonLineInput
+        jeq &event, evtypeArrange,   yonWindowArrange
+        jeq &event, evtypeLineInput, yonLineInput
         streamstr unexpectedGLKEvent
         jump yonInputLoop
 
@@ -722,7 +722,7 @@ yesOrNo: .function local_0 local_1
         jump yonInputLoop
     yonLineInput:
         aload event, 1, local_0
-        jne local_0, *mainwin, yonInputLoop
+        jne local_0, &mainwin, yonInputLoop
         jump yonGotLine
 
     yonGotLine:

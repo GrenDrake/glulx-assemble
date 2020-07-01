@@ -25,9 +25,9 @@ setup: .function
     copy 0, sp
     copy 0, sp
     copy 0, sp
-    glk $23, 5, *mainWindow
+    glk $23, 5, &mainWindow
 
-    copy *mainWindow, sp
+    copy &mainWindow, sp
     glk glkSetWindow, 1, 0
     return 0
 
