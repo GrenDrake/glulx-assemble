@@ -574,6 +574,24 @@ int eval_operand(struct operand *op, struct output_state *output, int report_unk
             op->known_value = TRUE;
             op->value = op->left->value / op->right->value;
             return EVAL_KNOWN;
+        case op_shift_left:
+            r1 = eval_operand(op->left, output, report_unknown_identifiers);
+            r2 = eval_operand(op->right, output, report_unknown_identifiers);
+            if (r1 == EVAL_INVALID || r2 == EVAL_INVALID) return EVAL_INVALID;
+            if (r1 == EVAL_UNKNOWN || r2 == EVAL_UNKNOWN) return EVAL_UNKNOWN;
+            op->op_type = op_value;
+            op->known_value = TRUE;
+            op->value = op->left->value << op->right->value;
+            return EVAL_KNOWN;
+        case op_shift_right:
+            r1 = eval_operand(op->left, output, report_unknown_identifiers);
+            r2 = eval_operand(op->right, output, report_unknown_identifiers);
+            if (r1 == EVAL_INVALID || r2 == EVAL_INVALID) return EVAL_INVALID;
+            if (r1 == EVAL_UNKNOWN || r2 == EVAL_UNKNOWN) return EVAL_UNKNOWN;
+            op->op_type = op_value;
+            op->known_value = TRUE;
+            op->value = op->left->value >> op->right->value;
+            return EVAL_KNOWN;
         default:
             report_error(&op->origin, "unhandled operation type");
             return EVAL_INVALID;

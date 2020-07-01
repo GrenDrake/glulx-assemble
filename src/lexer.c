@@ -9,6 +9,7 @@
 #define TOKEN_BUF_LEN 2048
 
 static int next_char(struct lexer_state *state);
+static int peek_char(struct lexer_state *state);
 static char* lexer_read_string(int quote_char, struct lexer_state *state);
 static int is_identifier(int ch);
 
@@ -31,6 +32,14 @@ static int next_char(struct lexer_state *state) {
         ++state->origin.column;
     }
     return old_here;
+}
+
+static int peek_char(struct lexer_state *state) {
+    if (state->text_pos >= state->text_length) {
+        return 0;
+    }
+
+    return state->text[state->text_pos];
 }
 
 static char* lexer_read_string(int quote_char, struct lexer_state *state) {
@@ -149,6 +158,16 @@ struct token_list* lex_core(struct lexer_state *state) {
             a_token->i = op_divide;
             add_token(tokens, a_token);
             in = next_char(state);
+        } else if (in == '>' && peek_char(state) == '>') {
+            a_token = new_token(tt_operator, NULL, state);
+            a_token->i = op_shift_right;
+            add_token(tokens, a_token);
+            next_char(state); in = next_char(state);
+        } else if (in == '<' && peek_char(state) == '<') {
+            a_token = new_token(tt_operator, NULL, state);
+            a_token->i = op_shift_left;
+            add_token(tokens, a_token);
+            next_char(state); in = next_char(state);
         } else if (in == '&') {
             a_token = new_token(tt_indirect, NULL, state);
             add_token(tokens, a_token);
@@ -266,7 +285,11 @@ struct token_list* lex_core(struct lexer_state *state) {
                 add_token(tokens, a_token);
             }
         } else {
-            report_error(&state->origin, "unexpected character");
+            if (in >= 32 && in <= 127) {
+                report_error(&state->origin, "unexpected character '%c' (%d).", in, in);
+            } else {
+                report_error(&state->origin, "unexpected character code %d", in);
+            }
             has_errors = 1;
             in = next_char(state);
         }

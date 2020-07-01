@@ -37,6 +37,8 @@ enum operator_type {
     op_multiply,
     op_divide,
     op_negate,
+    op_shift_left,
+    op_shift_right,
 };
 
 enum operand_type {
