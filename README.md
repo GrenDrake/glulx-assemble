@@ -66,7 +66,7 @@ An instruction statement consists of an opcode mnemonic followed by zero or more
 
 #### Operand Expressions
 
-As well as being plain values, operands may also consist of simple expressions. While the values used do not need to be defined before the expression is encountered, they must have a known assemble-time value (you can't, for instance, use the contents of a local variable).
+As well as being plain values, operands may also consist of simple expressions. While the values used do not need to be defined before the expression is encountered, they must have a known assemble-time value (you can't, for instance, use the contents of a local variable). The supported operators are demonstrated in [expressions.ga].
 
 While an expression can consist of more than two terms, this is not recommended at this time. The order in which the expression is evaluated is currently undefined and will likely produce unexpected results.
 
@@ -77,7 +77,7 @@ streamnum A_NUMBER + 1
 
 #### Custom Opcodes
 
-There is also a special mnemonic `opcode` which allows the use of custom opcodes not known to the assembler. The word `opcode` may be immediately followed by `rel` to indicate that the last operand should be treated as a relative value akin to the jump directives in glulx. Next is the opcode number (or constant defined with the opcode number) followed by all the operands as normal.
+There is a special mnemonic `opcode` which allows the use of custom opcodes not known to the assembler. The word `opcode` may be immediately followed by `rel` to indicate that the last operand should be treated as a relative value akin to the jump directives in glulx. Next is the opcode number (or constant defined with the opcode number) followed by all the operands as normal.
 
 ```
 opcode 112 32             ; print a single space character
@@ -192,6 +192,7 @@ These directives can be given labels or named constants as well as the various n
 ```
 
 [basic.ga]: ./demos/basic.ga "View source file"
+[expressions.ga]: ./demos/expressions.ga "View source file"
 [GGASM]: https://github.com/GrenDrake/ggasm "Visit GGASM repository on GitHub"
 [glulx spec 6.2]: https://www.eblong.com/zarf/glulx/glulx-spec_1.html#s.6.2 "Read Glulx official specs on this topic"
 [glulx]: https://www.eblong.com/zarf/glulx/ "Visit Glulx homepage"
