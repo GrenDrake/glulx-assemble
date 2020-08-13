@@ -35,10 +35,18 @@ Most of these options are intended for debugging the assembler and will not be g
 glulx-assemble -dump_tokens basic.ga basic.ulx
 ```
 
-Instructions for how source files should be formatted can be found in [source-files.md] in the docs directory.
+## Documentation
+
+The current documentation can be found in the docs directory.
+This currently consists of two files:
+
+[source-files.md]: A description of how to construct source files and a list of valid directives.
+
+[demos.md]: Descriptions of the demo programs.
 
 [GGASM]: https://github.com/GrenDrake/ggasm "Visit GGASM repository on GitHub"
 [glulx]: https://www.eblong.com/zarf/glulx/ "Visit Glulx homepage"
 [source-files.md]: ./docs/source-files.md "Source file format documentation"
+[demos.md]: ./docs/demos.md "Demo program descriptions"
 
 <!-- EOF -->
