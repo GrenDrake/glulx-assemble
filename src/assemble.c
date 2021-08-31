@@ -21,6 +21,7 @@ int main(int argc, char *argv[]) {
     int flag_dump_stringtable = FALSE;
     int flag_dump_debug = FALSE;
     int filename_counter = 0;
+    int timestamp_length = 0;
 
     for (int i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "-dump-pretokens") == 0) {
@@ -44,8 +45,9 @@ int main(int argc, char *argv[]) {
                 return 1;
             }
             if (strlen(argv[i]) >= MAX_TIMESTAMP_SIZE) {
-                fprintf(stderr, "max custom timestamp length is %d; provided stamp has length of %ld\n",
-                        MAX_TIMESTAMP_SIZE - 1, strlen(argv[i]));
+                timestamp_length = strlen(argv[i]);
+                fprintf(stderr, "max custom timestamp length is %d; provided stamp has length of %d\n",
+                        MAX_TIMESTAMP_SIZE - 1, timestamp_length);
                 return 1;
             }
             strncpy(info.timestamp, argv[i], MAX_TIMESTAMP_SIZE - 1);
