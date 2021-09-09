@@ -6,7 +6,7 @@
 #include "assemble.h"
 
 int main(int argc, char *argv[]) {
-    struct program_info info = { "output.ulx", 2048 };
+    struct program_info info = { "output.ulx", "start", 2048 };
     const char *infile  = "input.ga";
 
     enum {
@@ -38,6 +38,13 @@ int main(int argc, char *argv[]) {
             flag_dump_debug = TRUE;
         } else if (strcmp(argv[i], "-no-time") == 0) {
             flag_timestamp_type = ts_notime;
+        } else if (strcmp(argv[i], "-start") == 0) {
+            ++i;
+            if (i >= argc) {
+                fprintf(stderr, "-start passed but no label name provided\n");
+                return 1;
+            }
+            info.start_label = argv[i];
         } else if (strcmp(argv[i], "-timestamp") == 0) {
             ++i;
             if (i >= argc) {

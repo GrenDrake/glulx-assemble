@@ -1184,7 +1184,7 @@ int parse_tokens(struct token_list *list, struct program_info *info) {
     write_word(out, output.info->end_memory + output.info->extended_memory);
     write_word(out, output.info->stack_size);
 
-    struct label_def *label = get_label(output.info->first_label, "start");
+    struct label_def *label = get_label(output.info->first_label, output.info->start_label);
     if (label) {
         unsigned start_address = label->pos;
         write_word(out, start_address);

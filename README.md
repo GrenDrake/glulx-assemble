@@ -29,6 +29,7 @@ Most of these options are intended for debugging the assembler and will not be g
 | `-dump-tokens`    | Dumps a list of all the tokens in a program after the preprocessing phase has completed.                |
 | `-dump-debug`     | Dumps assorted debugging information produced during parsing to a file.                                 |
 | `-no-time`        | Exclude the current time from the default timestamp included in the generated file.                     |
+| `-start`          | Specify the label to be used as the program entry point. Label name must follow this argument.          |
 | `-timestamp`      | Replace the default timestamp with a custom timestamp provided after this argument.                     |
 
 ```

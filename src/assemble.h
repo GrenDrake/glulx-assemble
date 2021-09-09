@@ -167,6 +167,7 @@ struct string_table {
 
 struct program_info {
     const char *output_file;
+    const char *start_label;
     int stack_size;
     char timestamp[MAX_TIMESTAMP_SIZE];
 
